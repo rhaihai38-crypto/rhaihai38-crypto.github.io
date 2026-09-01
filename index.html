@@ -1,0 +1,2009 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FAF6EC">
+<title>OJ book</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="OJ book">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-tc-webfont@1.2.0/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FAF6EC;
+  --paper-2:#F2EAD8;
+  --ink:#2B2724;
+  --ink-soft:#6E655B;
+  --ink-faint:#B0A492;
+  --ochre:#C98A3C;
+  --blue:#7A93A3;
+  --sage:#8B9B72;
+  --brush:'LXGW WenKai TC','Klee One',"Noto Serif TC",serif;
+  --ledger:'IBM Plex Mono',ui-monospace,monospace;
+  --sheet:min(480px,100%);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--brush);
+  font-size:17px;
+  line-height:1.85;
+  -webkit-font-smoothing:antialiased;
+}
+.sheet{
+  width:var(--sheet);
+  margin:0 auto;
+  padding:calc(env(safe-area-inset-top) + 28px) 22px
+          calc(env(safe-area-inset-bottom) + 110px);
+  min-height:100vh;
+}
+.led{font-family:var(--ledger);font-size:.78rem;letter-spacing:.06em;color:var(--ink-soft)}
+.faint{color:var(--ink-faint)}
+h1,h2,h3{font-weight:400;margin:0}
+button{font-family:inherit;font-size:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,textarea{font-family:inherit;font-size:inherit;color:inherit;background:transparent;border:0;width:100%}
+input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
+  outline:2px solid var(--ochre);outline-offset:3px;border-radius:2px}
+.hide{display:none !important}
+
+/* ── 手繪線的輸入框 ── */
+.field{position:relative;padding:10px 2px 12px}
+.field input,.field textarea{position:relative;z-index:1;resize:none}
+.field svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.field path{fill:var(--ink-faint);stroke:none}
+.field:focus-within path{fill:var(--ochre)}
+::placeholder{color:var(--ink-faint);opacity:1}
+
+/* ── 按鈕 ── */
+.btn{position:relative;display:inline-flex;align-items:center;justify-content:center;
+  padding:11px 26px;min-height:46px}
+.btn span{position:relative;z-index:1}
+.btn svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.btn path{fill:var(--ink);stroke:none;fill-rule:evenodd}
+.btn.warm path{fill:var(--ochre)}
+.btn.warm span{color:#8E5F1E}
+.btn.plain{padding:6px 4px;min-height:0}
+.btn.plain svg{display:none}
+.btn.plain span{border-bottom:1.4px solid var(--ink-faint);padding-bottom:2px}
+.btn[disabled]{opacity:.4;cursor:default}
+.btn:active:not([disabled]){transform:translateY(1px)}
+
+/* ── 頭 ── */
+.head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px}
+.head .ym{font-size:1.55rem;letter-spacing:.04em}
+.rule{height:14px;margin:14px 0 26px}
+.rule svg{width:100%;height:100%;overflow:visible}
+.rule path{fill:var(--ink);stroke:none;opacity:.42}
+
+/* ── 相框 ── */
+.group{margin-bottom:30px}
+.group-head{display:flex;align-items:baseline;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.group-head.stack{display:block}
+.group-head.stack .row1{display:flex;align-items:baseline;gap:10px}
+.group-head h2{font-size:1.12rem}
+.group-head .sub{font-size:.86rem;color:var(--ink-soft);line-height:1.7;margin-top:2px}
+.grid{display:grid;column-gap:15px;row-gap:19px}
+.grid.self{grid-template-columns:1fr 1fr}
+/* 配額多的時候改成三欄。格子小一點，密度本身就在說這些照片比較日常。 */
+.grid.self.dense{grid-template-columns:repeat(3,1fr);column-gap:11px;row-gap:14px}
+.grid.self.dense .frame .tag{left:4px;bottom:4px;font-size:.6rem;padding:0 5px}
+.grid.self.dense .frame .tag.mark{left:auto;right:4px}
+.grid.self.dense .slot{font-size:1.15rem}
+.grid.us{grid-template-columns:1fr 1fr}
+.grid.me{grid-template-columns:1fr 1fr}
+.frame{position:relative;width:100%;padding:0;display:block}
+.frame.sq{aspect-ratio:1/1}
+.frame.wide{aspect-ratio:4/3}
+.frame.tall{aspect-ratio:3/4}
+.frame .line{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:2;pointer-events:none}
+.frame .line path{fill:var(--ink);stroke:none;fill-rule:evenodd}
+.frame.empty .line path{fill:var(--ink-faint);opacity:.85}
+.frame.us .line path.second{opacity:.5}
+.frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:1;
+  opacity:0;transition:opacity .5s ease}
+.frame img.in{opacity:1}
+.frame .slot{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  z-index:3;color:var(--ink-faint);font-family:var(--ledger);font-size:1.5rem}
+.frame.empty{cursor:pointer}
+.frame.empty:hover .line path{fill:var(--ochre);opacity:1}
+.frame.willful .line path{fill:var(--ochre);opacity:.55}
+.frame.willful:hover .line path{opacity:.9}
+.frame.willful .slot{flex-direction:column;gap:3px;color:#B0803A;font-family:var(--brush);font-size:.9rem}
+.frame.willful .slot em{font-style:normal;font-family:var(--ledger);font-size:1.15rem;opacity:.7}
+.frame .tag{position:absolute;left:7px;bottom:7px;z-index:4;font-family:var(--ledger);
+  font-size:.66rem;letter-spacing:.05em;color:#8E5F1E;background:rgba(250,246,236,.9);
+  padding:1px 7px;border-radius:999px}
+.frame .tag.mark{left:auto;right:7px}
+.frame.covered .cover{position:absolute;inset:0;z-index:3;border-radius:3px;
+  background:repeating-linear-gradient(-45deg,transparent 0 7px,rgba(122,147,163,.22) 7px 8px)}
+.group.opposite .frame .line path{fill:var(--blue);opacity:.65}
+.cap{margin:26px 0 0;font-size:.95rem;line-height:1.7}
+.cap.sys{font-family:var(--ledger);font-size:.78rem;letter-spacing:.05em;color:var(--ink-soft)}
+
+/* ── 底部 ── */
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--paper);
+  padding:10px 0 calc(env(safe-area-inset-bottom) + 10px);z-index:2147483000}
+.nav .inner{width:var(--sheet);margin:0 auto;display:flex;justify-content:space-around;
+  padding:0 22px;border-top:1.3px solid rgba(43,39,36,.14)}
+.nav button{padding:12px 8px;font-size:.95rem;color:var(--ink-soft);position:relative}
+.nav button.on{color:var(--ink)}
+.nav button.on::after{content:'';position:absolute;left:50%;bottom:6px;width:5px;height:5px;
+  margin-left:-2.5px;border-radius:50%;background:var(--ochre)}
+.nav button[disabled]{opacity:.32}
+
+/* ── 覆蓋層 ── */
+.veil{position:fixed;inset:0;background:rgba(43,39,36,.28);z-index:2147483600;
+  display:flex;align-items:flex-end;justify-content:center;animation:fade .2s ease}
+.panel{width:var(--sheet);max-height:92vh;overflow-y:auto;background:var(--paper);
+  border-radius:16px 16px 0 0;padding:26px 22px calc(env(safe-area-inset-bottom) + 34px);
+  animation:rise .28s cubic-bezier(.2,.8,.3,1)}
+.panel h3{font-size:1.2rem;margin-bottom:6px;padding-right:34px}
+.panel .x{position:absolute;top:14px;right:14px;width:34px;height:34px;
+  display:flex;align-items:center;justify-content:center;font-size:1.35rem;
+  color:var(--ink-faint);line-height:1;z-index:5}
+.panel .x:active{color:var(--ink)}
+.panel{position:relative}
+.danger span{color:#A3502A}
+.danger path{fill:#A3502A}
+.q .meta .btn.plain span{border-bottom-color:var(--ink-faint)}
+.panel .row{display:flex;gap:10px;align-items:stretch;margin-top:22px}
+.panel .row .btn span{white-space:nowrap}
+.panel .row .btn{flex:1}
+@keyframes fade{from{opacity:0}}
+@keyframes rise{from{transform:translateY(20px);opacity:0}}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+
+.preview{display:block;width:100%;max-height:46vh;object-fit:contain;
+  border-radius:3px;margin:2px auto 16px}
+.choices{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0 4px}
+.chip{padding:7px 15px;border:1.4px solid var(--ink-faint);border-radius:999px;
+  font-size:.92rem;color:var(--ink-soft)}
+.chip.on{border-color:var(--ochre);color:#8E5F1E;background:rgba(201,138,60,.09)}
+.note{font-size:.9rem;color:var(--ink-soft);line-height:1.7;margin-top:10px}
+.err{color:#A3502A;font-size:.9rem;margin-top:10px;min-height:1.2em}
+
+/* ── 金句本 ── */
+.q{padding:18px 0 4px 14px;position:relative}
+.q+.q{border-top:1px solid rgba(43,39,36,.09)}
+.q::before{content:'';position:absolute;left:0;top:20px;bottom:8px;width:2px;
+  border-radius:2px;background:var(--qc);opacity:.5}
+.q[data-kind="quote"]{--qc:var(--ochre)}
+.q[data-kind="note"]{--qc:var(--sage)}
+.q[data-kind="ask"]{--qc:var(--blue)}
+.q[data-kind="say"]{--qc:var(--rose)}
+.q .lab{font-family:var(--ledger);font-size:.65rem;letter-spacing:.09em;
+  color:var(--qc);opacity:.9;margin-bottom:4px}
+.filters{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 18px}
+.filters .chip{padding:5px 12px;font-size:.8rem}
+.filters .chip .n{font-family:var(--ledger);font-size:.68rem;opacity:.7;margin-left:5px}
+.q .txt{font-size:1.06rem;line-height:1.9}
+.q .meta{margin-top:7px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.q .who{font-family:var(--ledger);font-size:.7rem;letter-spacing:.05em;color:var(--ink-faint)}
+.q .src{font-size:.88rem;color:var(--ink-soft)}
+.stamps{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}
+.st{padding:4px 11px;border:1.2px solid rgba(43,39,36,.16);border-radius:999px;
+  font-size:.78rem;color:var(--ink-faint);line-height:1.5}
+.st.mine{border-color:var(--ochre);color:#8E5F1E;background:rgba(201,138,60,.1)}
+.st.theirs{border-color:var(--blue);color:#4F6674;background:rgba(122,147,163,.12)}
+.stamps.solo .st{padding:6px 18px;font-size:.9rem}
+.add-fab{margin:26px 0 0}
+
+/* ── 三扇門 ── */
+.doors{margin-top:28px;display:flex;flex-direction:column;gap:11px}
+.door{position:relative;text-align:left;padding:15px 18px;min-height:0}
+.door span{position:relative;z-index:1;font-size:1rem}
+.door svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.door path{fill:var(--ink-faint);stroke:none;fill-rule:evenodd}
+.door.ask path{fill:var(--ochre);opacity:.75}
+.door.ask span{color:#8E5F1E}
+.door.say path{fill:var(--rose);opacity:.8}
+.door.say span{color:#9A6357}
+.door:active{transform:translateY(1px)}
+
+/* ── 抽到的題：霧裡浮現 ── */
+.slip{position:relative;margin:6px 0 4px;padding:30px 20px;min-height:116px;
+  display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden}
+.slip>svg.frame{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:2}
+.slip>svg.frame path{fill:var(--ochre);stroke:none;fill-rule:evenodd;opacity:.8}
+.slip .mist{position:absolute;inset:-24%;z-index:1;opacity:0;
+  transition:opacity .8s ease}
+.slip.rolling .mist{opacity:1}
+.slip.landed .mist{opacity:0;transition:opacity 1.1s ease}
+.slip .q{position:relative;z-index:3;font-size:1.12rem;line-height:1.75;
+  transition:filter .55s ease,opacity .55s ease,transform .55s ease}
+.slip.rolling .q{filter:blur(7px);opacity:.35;transform:scale(.94)}
+.slip.landed .q{filter:none;opacity:1;transform:none}
+.slip .glow{position:absolute;left:50%;top:50%;width:150%;height:190%;
+  transform:translate(-50%,-50%);z-index:0;opacity:0;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(201,138,60,.42),rgba(201,138,60,0));
+  transition:opacity .9s ease}
+.slip.landed .glow{opacity:0;animation:bloom 1.5s ease-out}
+@keyframes bloom{0%{opacity:0}18%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){
+  .slip .q,.slip .mist,.slip .glow{transition:none!important;animation:none!important;filter:none!important}
+}
+
+/* ── 對方丟過來的題 ── */
+.tossed{position:relative;margin:0 0 22px;padding:18px 18px 16px}
+.tossed svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.tossed path{fill:var(--blue);stroke:none;fill-rule:evenodd;opacity:.75}
+.tossed>*{position:relative;z-index:1}
+.tossed .who{font-family:var(--ledger);font-size:.7rem;letter-spacing:.06em;
+  color:var(--blue);margin-bottom:5px}
+.tossed .qq{font-size:1.06rem;line-height:1.8}
+.tossed .acts{display:flex;gap:10px;margin-top:13px}
+.nav button .dot{position:absolute;top:8px;right:6px;width:6px;height:6px;
+  border-radius:50%;background:var(--ochre)}
+.q-tag{font-size:.88rem;color:var(--ink-soft);line-height:1.7;margin-bottom:4px}
+.q-tag::before{content:'— ';color:var(--ink-faint)}
+
+/* ── 任性罐 ── */
+.jarwrap{display:flex;justify-content:center;padding:14px 0 4px}
+.jarwrap svg{width:186px;height:auto;overflow:visible}
+.jarwrap path.glass{fill:var(--ink);stroke:none;fill-rule:evenodd}
+.shelf{display:flex;gap:13px;flex-wrap:wrap;margin-top:14px}
+.mini{width:84px}
+.mini svg{width:84px;height:auto;overflow:visible}
+.mini path{fill:var(--ink-faint);stroke:none;fill-rule:evenodd}
+.mini .w{font-size:.78rem;line-height:1.55;color:var(--ink-soft);margin-top:2px}
+.wish{padding:15px 0;font-size:1rem;line-height:1.8;display:flex;align-items:baseline;gap:12px}
+.wish .wdel{margin-left:auto;flex:0 0 auto}
+.subh{font-size:.96rem;font-weight:400;margin:22px 0 2px;color:var(--ink)}
+.subh .led{margin-left:8px}
+.wish+.wish{border-top:1px solid rgba(43,39,36,.09)}
+.wish .who{font-family:var(--ledger);font-size:.7rem;letter-spacing:.05em;color:var(--ink-faint);margin-right:8px}
+.sec{margin-top:36px}
+.sec h2{font-size:1.1rem;margin-bottom:4px}
+
+/* ── 設定 ── */
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 0}
+.set-row+.set-row{border-top:1px solid rgba(43,39,36,.09)}
+.set-row .t{font-size:1rem}
+.set-row .s{font-size:.84rem;color:var(--ink-soft);margin-top:2px}
+.set-row .btn{flex:0 0 auto}
+.head .who-btn{font-family:var(--ledger);font-size:.78rem;letter-spacing:.06em;
+  color:var(--ink-soft);padding:4px 2px}
+.head .who-btn::after{content:' ⋯';color:var(--ink-faint)}
+.dormant{margin-top:38px;padding-top:20px;border-top:1px solid rgba(43,39,36,.09);opacity:.55}
+
+/* ── 水彩與插圖 ── */
+.wash{position:absolute;pointer-events:none;z-index:0}
+.group-head{position:relative}
+.group-head .wash{left:-16px;top:-10px;width:120px;height:52px}
+.group-head h2,.group-head .led{position:relative;z-index:1}
+.sheet{position:relative}
+.sheet>.wash.page{left:-30%;top:-46px;width:92%;height:190px;z-index:0}
+.head,.cap,.group,.rule,.sec{position:relative;z-index:1}
+.vig{width:104px;height:auto;display:block;margin:6px 0 2px}
+.vig path{fill:var(--ink-faint);stroke:none;fill-rule:evenodd}
+.vig-wrap{display:flex;align-items:flex-end;gap:16px;margin-top:8px}
+.vig-wrap .cap{margin:0}
+
+/* ── 前景通知 ── */
+.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 12px);
+  transform:translateX(-50%);width:min(440px,calc(100% - 24px));z-index:2147483647;
+  background:var(--paper);padding:14px 18px;border-radius:12px;
+  box-shadow:0 6px 24px rgba(43,39,36,.16);animation:drop .3s cubic-bezier(.2,.8,.3,1)}
+.toast .t{font-family:var(--ledger);font-size:.68rem;letter-spacing:.08em;
+  color:var(--ink-faint);margin-bottom:3px}
+.toast .b{font-size:1rem;line-height:1.7}
+@keyframes drop{from{transform:translate(-50%,-14px);opacity:0}}
+
+/* ── 開場 ── */
+.gate{width:var(--sheet);margin:0 auto;padding:16vh 26px 60px;min-height:100vh}
+.gate h1{font-size:1.7rem;margin-bottom:20px;letter-spacing:.03em}
+.gate .letter{font-size:1.02rem;line-height:2.05;margin-bottom:30px}
+.gate .letter p{margin:0 0 16px}
+.hut-note{font-size:.94rem;line-height:1.9;color:var(--ink-soft);
+  padding-left:14px;border-left:2px solid var(--ochre);margin:24px 0 32px}
+.spin{display:inline-block;width:13px;height:13px;border:1.6px solid var(--ink-faint);
+  border-top-color:var(--ochre);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+<script src="./config.js?v=2"></script>
+</head>
+<body>
+
+<div id="app"><div class="gate"><p class="led">開啟中 <span class="spin"></span></p></div></div>
+
+<script>
+/* ══════════════════════════════════════════
+   筆刷
+   線條會忽粗忽細，像毛筆壓下去又提起來。
+   同一個 seed 永遠畫出同一條線，所以不會抖。
+   ══════════════════════════════════════════ */
+function rng(seed){let s=seed>>>0||1;return()=>{s^=s<<13;s^=s>>>17;s^=s<<5;return((s>>>0)%1000)/1000}}
+
+/* 二次貝茲取樣 */
+function qSample(a,c,b,n,out){
+  for(let k=1;k<=n;k++){
+    const t=k/n,u=1-t;
+    out.push([u*u*a[0]+2*u*t*c[0]+t*t*b[0], u*u*a[1]+2*u*t*c[1]+t*t*b[1]]);
+  }
+}
+
+/* 抖動的方框 → 一圈取樣點 */
+function rectPoints(w,h,seed,slack){
+  const r=rng(seed),k=slack===undefined?4.2:slack,j=()=>(r()-.5)*k;
+  const p=[[j(),j()],[w+j(),j()],[w+j(),h+j()],[j(),h+j()]];
+  const pts=[p[0].slice()];
+  for(let i=0;i<4;i++){
+    const a=p[i],b=p[(i+1)%4];
+    const c=[(a[0]+b[0])/2+(r()-.5)*k*2.1,(a[1]+b[1])/2+(r()-.5)*k*2.1];
+    qSample(a,c,b,14,pts);
+  }
+  return pts;
+}
+
+/* 抖動的橫線 → 一串取樣點 */
+function linePoints(w,seed,amp){
+  const r=rng(seed),a=amp===undefined?2.2:amp;
+  const pts=[[0,7]];
+  const n=6;
+  let prev=[0,7];
+  for(let i=1;i<=n;i++){
+    const b=[w*i/n, 7+(r()-.5)*a];
+    const c=[w*(i-.5)/n, 7+(r()-.5)*a*2];
+    qSample(prev,c,b,8,pts); prev=b;
+  }
+  return pts;
+}
+
+/**
+ * 把取樣點變成有粗細變化的填色輪廓。
+ * closed=true 畫成一圈（框），false 畫成一筆（線，兩端收尖）。
+ */
+function brush(pts,closed,base,seed,vary){
+  const n=pts.length;
+  if(n<3)return '';
+  const r=rng(seed+733);
+  const v=vary===undefined?.55:vary;
+  const ph1=r()*6.28, ph2=r()*6.28;
+  const wAt=function(i){
+    const t=i/(n-1);
+    let m=1+v*(Math.sin(t*7.1+ph1)*.6+Math.sin(t*17.3+ph2)*.4);
+    if(!closed){                       // 兩端收尖，像起筆和收筆
+      const e=Math.min(t,1-t)/.16;
+      if(e<1)m*=Math.max(.12,Math.pow(e,.65));
+    }
+    return base*m/2;
+  };
+  const L=[],R=[];
+  for(let i=0;i<n;i++){
+    const a=pts[(i-1+n)%n], b=pts[(i+1)%n];
+    let dx=b[0]-a[0], dy=b[1]-a[1];
+    const d=Math.hypot(dx,dy)||1; dx/=d; dy/=d;
+    const hw=wAt(i);
+    L.push([pts[i][0]-dy*hw, pts[i][1]+dx*hw]);
+    R.push([pts[i][0]+dy*hw, pts[i][1]-dx*hw]);
+  }
+  const f=p=>p[0].toFixed(1)+' '+p[1].toFixed(1);
+  let d='M'+f(L[0]);
+  for(let i=1;i<n;i++)d+='L'+f(L[i]);
+  if(closed)d+='Z M'+f(R[0]); else d+='L'+f(R[n-1]);
+  for(let i=n-2;i>=0;i--)d+='L'+f(R[i]);
+  d+='Z';
+  return d;
+}
+
+function inkRectPath(w,h,seed,base,slack){
+  return brush(rectPoints(w,h,seed,slack),true,base||2.4,seed);
+}
+function inkLinePath(w,seed,base,amp){
+  return brush(linePoints(w,seed,amp),false,base||2.6,seed);
+}
+
+function inkBox(el,seed){
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('class','line');svg.setAttribute('preserveAspectRatio','none');
+  el.appendChild(svg);
+  const draw=()=>{
+    const w=el.clientWidth,h=el.clientHeight;
+    if(!w||!h)return;
+    svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
+    let inner='';
+    if(el.classList.contains('us')){
+      inner=`<path class="second" d="${inkRectPath(w-7,h-7,seed+91,1.25)}" transform="translate(3.5,3.5)"/>`;
+    }
+    svg.innerHTML=`<path d="${inkRectPath(w,h,seed,el.classList.contains('empty')?1.7:2.2)}"/>`+inner;
+  };
+  draw();
+  if(window.ResizeObserver)new ResizeObserver(draw).observe(el);
+  return draw;
+}
+
+function inkRule(el,seed){
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  el.appendChild(svg);
+  const draw=()=>{const w=el.clientWidth;if(!w)return;
+    svg.setAttribute('viewBox',`0 0 ${w} 14`);
+    svg.innerHTML=`<path d="${inkLinePath(w,seed,1.9)}"/>`;};
+  draw();if(window.ResizeObserver)new ResizeObserver(draw).observe(el);
+}
+
+/* ══════════════════════════════════════════
+   水彩暈染
+   ══════════════════════════════════════════ */
+function washDefs(){
+  if(document.getElementById('ink-defs'))return;
+  const d=document.createElement('div');
+  d.innerHTML=`<svg id="ink-defs" width="0" height="0" aria-hidden="true"
+    style="position:absolute;pointer-events:none">
+    <defs>
+      <filter id="wash1" x="-40%" y="-40%" width="180%" height="180%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.014" numOctaves="3" seed="7" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="30" xChannelSelector="R" yChannelSelector="G"/>
+        <feGaussianBlur stdDeviation="2.6"/>
+      </filter>
+      <filter id="mist" x="-30%" y="-30%" width="160%" height="160%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.018 0.03" numOctaves="4" seed="13">
+          <animate attributeName="baseFrequency" dur="7s"
+            values="0.018 0.03;0.026 0.021;0.018 0.03" repeatCount="indefinite"/>
+        </feTurbulence>
+        <feDisplacementMap in="SourceGraphic" in2="" scale="26"/>
+        <feGaussianBlur stdDeviation="7"/>
+      </filter>
+      <filter id="wash2" x="-40%" y="-40%" width="180%" height="180%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="31" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="22" xChannelSelector="R" yChannelSelector="G"/>
+        <feGaussianBlur stdDeviation="2"/>
+      </filter>
+    </defs></svg>`;
+  document.body.appendChild(d.firstElementChild);
+}
+
+/** 一團暈開的顏色。放在文字或框的後面。 */
+function wash(w,h,color,op,f){
+  const cls=(w>=300)?'wash page':'wash';
+  return `<svg class="${cls}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
+    <ellipse cx="${w/2}" cy="${h/2}" rx="${w*0.36}" ry="${h*0.34}"
+      fill="${color}" opacity="${op}" filter="url(#${f||'wash1'})"/></svg>`;
+}
+
+/* ══════════════════════════════════════════
+   小插圖（原創，不是那本書裡的角色）
+   ══════════════════════════════════════════ */
+/* 把折線加密，筆刷才畫得出輪廓而不是塗成一塊 */
+function densify(pts,closed,per){
+  const n=pts.length,out=[],m=closed?n:n-1,k=per||9;
+  for(let i=0;i<m;i++){
+    const a=pts[i],b=pts[(i+1)%n];
+    for(let j=0;j<k;j++){
+      const t=j/k;out.push([a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t]);
+    }
+  }
+  if(!closed)out.push(pts[n-1]);
+  return out;
+}
+
+function vignette(kind){
+  const P=[];
+  const add=(pts,closed,base,seed)=>
+    P.push(`<path d="${brush(densify(pts,closed),closed,base,seed)}"/>`);
+  const arc=(cx,cy,r,a0,a1,n)=>{const o=[];for(let i=0;i<=n;i++){
+    const a=a0+(a1-a0)*i/n;o.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r]);}return o;};
+
+  if(kind==='hut'){
+    add([[18,62],[18,40],[52,22],[86,40],[86,62]],false,2.6,11);   // 屋身與屋頂
+    add([[14,62],[90,62]],false,2.2,23);                           // 地
+    P.push(`<path d="${brush(rectPoints(16,14,41,1.4).map(p=>[p[0]+44,p[1]+41]),true,1.5,41)}"/>`);
+    P.push(`<circle cx="52" cy="47" r="9" fill="var(--ochre)" opacity=".2"/>`); // 窗裡的光
+  }
+  if(kind==='cup'){
+    add([[26,44],[28,72],[34,78],[62,78],[68,72],[70,44]],false,2.6,17); // 杯身
+    add([[22,44],[74,44]],false,2.2,29);                                 // 杯口
+    P.push(`<path d="${brush(arc(72,56,10,-1.25,1.25,18),false,1.9,53)}"/>`);
+    add([[42,34],[46,26],[42,18]],false,1.7,61);                         // 熱氣
+    add([[54,34],[58,26],[54,18]],false,1.7,71);
+  }
+  if(kind==='boat'){
+    add([[18,56],[30,70],[70,70],[82,56]],false,2.2,13);   // 船身
+    add([[18,56],[82,56]],false,1.8,83);                   // 船緣
+    add([[50,56],[50,20]],false,1.9,37);                   // 桅
+    add([[52,22],[74,50],[52,50]],false,1.7,47);           // 帆
+    add([[8,82],[30,78],[54,82],[96,78]],false,1.6,59);    // 水
+  }
+  if(kind==='stones'){
+    P.push(`<path d="${brush(arc(38,64,18,Math.PI,2*Math.PI,26).concat([[56,66],[20,66]]),true,2,19)}"/>`);
+    P.push(`<path d="${brush(arc(71,68,12,Math.PI,2*Math.PI,20).concat([[83,70],[59,70]]),true,1.8,31)}"/>`);
+    add([[6,74],[98,72]],false,1.6,43);
+  }
+  return `<svg class="vig" viewBox="0 0 104 92" aria-hidden="true">${P.join('')}</svg>`;
+}
+
+/* ══════════════════════════════════════════
+   API
+   ══════════════════════════════════════════ */
+/* 版本標記。設定面板最下面會顯示，用來確認手機上跑的是哪一版。 */
+const BUILD='2026-08-31d · 說出真正的原因';
+
+const LS={url:'jo.url',token:'jo.token',seen:'jo.welcomed',fgSys:'jo.fgSystem'};
+const BAKED=(typeof API_URL!=='undefined'&&API_URL)?API_URL:'';
+const S={url:BAKED||localStorage.getItem(LS.url)||'',token:localStorage.getItem(LS.token)||'',
+  user:'',partner:'',copy:{},settings:{},stamps:[],stampSets:{},pending:[],
+  view:null,tab:'month',imgCache:{},qfilter:''};
+
+/**
+ * 送一個請求出去，並且在回來的東西不是 JSON 時說清楚為什麼。
+ * 「連不上」是最沒用的錯誤訊息 —— 它把唯一的線索吞掉了。
+ */
+async function post(url,body){
+  let res;
+  try{
+    res=await fetch(url,{method:'POST',redirect:'follow',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)});
+  }catch(e){
+    throw new Error('連不到伺服器（網路不通，或網址錯了）');
+  }
+  const txt=await res.text();
+  try{
+    return JSON.parse(txt);
+  }catch(e){
+    // Apps Script 出錯時回的是 HTML，不是 JSON
+    const low=txt.toLowerCase();
+    if(low.indexOf('accounts.google.com')>=0||low.indexOf('signin')>=0
+      ||low.indexOf('sign in')>=0||low.indexOf('登入')>=0){
+      throw new Error('後端要求登入 Google —— 部署設定裡「誰可以存取」要選「所有人」，改完要重新部署');
+    }
+    if(low.indexOf('script function not found')>=0||low.indexOf('找不到指令碼函式')>=0){
+      throw new Error('後端沒有 doPost —— Code.gs 可能沒貼完整');
+    }
+    if(low.indexOf('authorization')>=0||low.indexOf('授權')>=0){
+      throw new Error('後端需要重新授權 —— 到 Apps Script 手動執行一次 diagnose 並允許');
+    }
+    if(res.status>=400){
+      throw new Error('後端回了 HTTP '+res.status+'：'+txt.replace(/<[^>]*>/g,' ').trim().slice(0,90));
+    }
+    throw new Error('後端回的不是 JSON：'+txt.replace(/<[^>]*>/g,' ').trim().slice(0,90));
+  }
+}
+
+async function api(action,payload){
+  const j=await post(S.url,Object.assign({action,token:S.token},payload||{}));
+  if(!j.ok)throw new Error(j.error||'出了點狀況');
+  return j.data;
+}
+
+/* 語氣表。找不到就回代號，這樣缺字會很明顯，不會默默消失。 */
+/**
+ * 試算表裡有就用，沒有就用寫在程式裡的那句。
+ * 這樣即使還沒跑 setup，畫面也不會冒出一堆代號。
+ */
+function tf(key,fallback,vars){
+  if(S.copy[key]===undefined){
+    let x=fallback;
+    if(vars)for(const k in vars)x=String(x).split('{'+k+'}').join(vars[k]);
+    return x;
+  }
+  return t(key,vars);
+}
+
+/** 有專屬的說法就用專屬的，沒有就退回通用的。 */
+function tk(base,kind,vars){
+  const special=base+'.'+kind;
+  return (S.copy[special]!==undefined)?t(special,vars):t(base,vars);
+}
+function t(key,vars){
+  let s=S.copy[key]!==undefined?S.copy[key]:key;
+  if(vars)for(const k in vars)s=s.split('{'+k+'}').join(vars[k]);
+  return s;
+}
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ══════════════════════════════════════════
+   零件
+   ══════════════════════════════════════════ */
+function btn(label,cls,attrs){
+  return `<button class="btn ${cls||''}" ${attrs||''}>
+    <svg preserveAspectRatio="none" viewBox="0 0 100 46"><path d="${inkRectPath(100,46,hash(label),2.1,2.2)}"/></svg>
+    <span>${esc(label)}</span></button>`;
+}
+function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+
+function paintFields(root){
+  (root||document).querySelectorAll('.field').forEach((f,i)=>{
+    let svg=f.querySelector('svg');
+    if(!svg){
+      svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+      svg.setAttribute('preserveAspectRatio','none');
+      f.appendChild(svg);
+    }
+    const draw=()=>{const w=f.clientWidth,h=f.clientHeight;if(!w||!h)return;
+      svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
+      svg.innerHTML=`<path d="${inkLinePath(w,hash(f.textContent+i)+i,1.9,1.6)}" transform="translate(0,${h-9})"/>`;};
+    draw();if(window.ResizeObserver)new ResizeObserver(draw).observe(f);
+  });
+}
+function paintButtons(root){
+  (root||document).querySelectorAll('.door svg').forEach(svg=>{
+    const b=svg.parentElement;
+    const draw=()=>{const w=b.clientWidth,h=b.clientHeight;if(!w||!h)return;
+      svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
+      svg.innerHTML=`<path d="${inkRectPath(w-4,h-4,hash(b.textContent),1.7,3)}" transform="translate(2,2)"/>`;};
+    draw();if(window.ResizeObserver)new ResizeObserver(draw).observe(b);
+  });
+  (root||document).querySelectorAll('.btn:not(.plain):not(.door) svg').forEach(svg=>{
+    const b=svg.parentElement;
+    const draw=()=>{const w=b.clientWidth,h=b.clientHeight;if(!w||!h)return;
+      svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
+      svg.innerHTML=`<path d="${inkRectPath(w-4,h-4,hash(b.textContent),2.1,2.2)}" transform="translate(2,2)"/>`;};
+    draw();if(window.ResizeObserver)new ResizeObserver(draw).observe(b);
+  });
+}
+
+/* ══════════════════════════════════════════
+   畫面：接線
+   ══════════════════════════════════════════ */
+function screenSetup(msg){
+  document.getElementById('app').innerHTML=`<div class="gate">
+    <h1>先接上線</h1>
+    <p class="note">貼上你在 Apps Script「部署」之後拿到的網址。這件事只做一次。</p>
+    <div class="field"><input id="u" inputmode="url" autocapitalize="off" spellcheck="false"
+      placeholder="https://script.google.com/macros/s/.../exec"></div>
+    <div class="err" id="e">${esc(msg||'')}</div>
+    <div style="margin-top:20px">${btn('接上','warm','id="go"')}</div>
+    <p class="note" style="margin-top:34px">貼不進去的話，長按輸入框選「貼上」。
+    網址在 Apps Script 的「部署 → 管理部署作業」裡，結尾是 /exec 的那一個。</p>
+  </div>`;
+  paintFields();paintButtons();
+  const inp=document.getElementById('u'),e=document.getElementById('e');
+  setTimeout(()=>inp.focus(),100);
+
+  const go=async()=>{
+    let v=inp.value.replace(/[\s'"`<>]/g,'').replace(/\/+$/,'');
+    if(!v){e.textContent='還沒貼上網址';inp.focus();return;}
+    if(v.indexOf('script.google.com')<0){
+      e.textContent='這不像 Apps Script 的網址，它應該是 script.google.com 開頭';return;}
+    if(/\/dev$/.test(v)){
+      e.textContent='這是測試用的網址。要用「部署」拿到的那個，結尾是 /exec';return;}
+    if(!/\/exec$/.test(v)){
+      e.textContent='網址結尾應該是 /exec';return;}
+    if(v.indexOf('https://')!==0)v='https://'+v.replace(/^https?:\/\//,'');
+
+    e.innerHTML='試試看能不能通 <span class="spin"></span>';
+    try{
+      const j=await post(v,{action:'login',code:'__probe__'});
+      if(typeof j.ok==='undefined')throw new Error('回來的東西不對');
+      S.url=v;localStorage.setItem(LS.url,v);screenLogin();
+    }catch(err){ e.textContent=err.message; }
+  };
+  document.getElementById('go').onclick=go;
+  inp.onkeydown=ev=>{if(ev.key==='Enter')go()};
+  inp.oninput=()=>{if(e.textContent)e.textContent=''};
+}
+
+function screenLogin(msg){
+  document.getElementById('app').innerHTML=`<div class="gate">
+    <h1>${esc(tf('login.prompt','輸入你的登入碼'))}</h1>
+    <div class="field" style="margin-top:18px">
+      <input id="c" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder=""></div>
+    <div class="err" id="e">${esc(msg||'')}</div>
+    <div style="margin-top:20px">${btn(tf('ui.enter','進去'),'warm','id="go"')}</div>
+    <p style="margin-top:40px"><button class="btn plain" id="reset"><span>換一個網址</span></button></p>
+    <p class="note" id="url" style="margin-top:22px;word-break:break-all;font-size:.76rem"></p>
+  </div>`;
+  paintFields();paintButtons();
+  const uel=document.getElementById('url');
+  if(uel)uel.textContent='目前連到：'+S.url;
+  const go=async()=>{
+    const code=document.getElementById('c').value.trim();
+    if(!code){document.getElementById('e').textContent='還沒輸入';return;}
+    document.getElementById('e').innerHTML='<span class="spin"></span>';
+    try{
+      const j=await post(S.url,{action:'login',code});
+      if(!j.ok||!j.data){
+        document.getElementById('e').textContent=
+          j.error||tf('login.error','這個碼我不認得欸，再看一次？');
+        return;
+      }
+      S.token=j.data.token;S.user=j.data.user;S.partner=j.data.partner;
+      localStorage.setItem(LS.token,S.token);
+      localStorage.removeItem(CACHE);
+      await boot();
+    }catch(err){document.getElementById('e').textContent=err.message;}
+  };
+  document.getElementById('go').onclick=go;
+  document.getElementById('c').onkeydown=e=>{if(e.key==='Enter')go()};
+  document.getElementById('reset').onclick=()=>{localStorage.removeItem(LS.url);screenSetup();};
+}
+
+function screenWelcome(){
+  const letter=t('welcome.letter').split(/\n+/).map(p=>`<p>${esc(p)}</p>`).join('');
+  document.getElementById('app').innerHTML=`<div class="gate">
+    <h1>${esc(t('welcome.title'))}</h1>
+    <div class="letter">${letter}</div>
+    <div class="hut-note">${esc(t('welcome.hut'))}</div>
+    ${btn(t('welcome.enter'),'warm','id="go"')}
+  </div>`;
+  paintButtons();
+  document.getElementById('go').onclick=()=>{
+    localStorage.setItem(LS.seen,'1');render();maybeInvite();};
+}
+
+/* ══════════════════════════════════════════
+   畫面：這個月
+   ══════════════════════════════════════════ */
+function monthLabel(ym){
+  const names=tf('month.names','一,二,三,四,五,六,七,八,九,十,十一,十二').split(',');
+  const [y,m]=ym.split('-');
+  const nm=(names[Number(m)-1]||m).trim();
+  return {y, m:tf('month.format','{m}月',{m:nm})};
+}
+
+function frameHTML(kind,i,photo,opts){
+  const o=opts||{};
+  const shape=kind==='us'?'wide':(kind==='me'?'tall':'sq');
+  const cls=['frame',shape,kind==='us'?'us':'',photo?'':'empty',
+    o.covered?'covered':'',o.willful?'willful':''].join(' ');
+  const seed=hash(kind+i+(o.ns||''));
+  const inner=photo
+    ? `<img data-pid="${esc(photo.id)}" alt="">${photo.isLate?`<span class="tag">${esc(t('late.badge'))}</span>`:''}${photo.isWillful?`<span class="tag mark">任性</span>`:''}`
+    : (o.covered?`<div class="cover"></div>`
+      : o.willful?`<div class="slot"><em>＋</em>${esc(t('willful.confirm'))}</div>`
+      : `<div class="slot">＋</div>`);
+  const addable=!photo&&!o.covered&&!o.readonly;
+  return `<div class="${cls}" data-seed="${seed}" data-kind="${kind}"
+    ${addable?`data-add="${kind}" tabindex="0" role="button"`:''}
+    ${photo?'tabindex="0" role="button"':''}>${inner}</div>`;
+}
+
+function renderMonth(){
+  const v=S.view,q=v.quota,c=v.counts;
+  const {y,m}=monthLabel(v.yearMonth);
+  const selfSlots=[],usSlots=[];
+  const meSlots=[];
+  const pick=k=>v.mine.filter(p=>p.visibility==='shared'&&p.kind===k);
+  const mineSelf=pick('self'),mineUs=pick('us'),mineMe=pick('me');
+  const fill=(box,kind,list,limit)=>{
+    const n=Math.max(limit,list.length);
+    for(let i=0;i<n;i++)box.push(frameHTML(kind,i,list[i]));
+    if(list.length>=limit)box.push(frameHTML(kind,n,null,{willful:true}));
+  };
+  fill(selfSlots,'self',mineSelf,q.self);
+  fill(usSlots,'us',mineUs,q.us);
+  fill(meSlots,'me',mineMe,q.me||1);
+
+  let opposite='';
+  if(v.revealed){
+    const them=v.theirs;
+    opposite=them.length
+      ? `<div class="grid self${q.self>=7?' dense':''}">${them.map((p,i)=>frameHTML('self',i,p,{ns:'t',readonly:true})).join('')}</div>
+         <p class="cap">${esc(t('reveal.done'))}</p>`
+      : `<div class="vig-wrap">${vignette('stones')}<p class="cap">${esc(t('reveal.quiet'))}</p></div>`;
+  }else{
+    const n=v.partnerPending;
+    const d=new Date(v.revealAt);
+    const when=t('reveal.when',{date:`${d.getMonth()+1}/${d.getDate()}`,hour:d.getHours()});
+    opposite=n
+      ? `<div class="grid self${q.self>=7?' dense':''}">${Array.from({length:n},(_,i)=>frameHTML('self',i,null,{covered:true,ns:'c'})).join('')}</div>
+         <p class="cap sys">${esc(t('reveal.waiting',{n}))}　${esc(when)}</p>`
+      : `<div class="vig-wrap">${vignette('boat')}<div><p class="cap">${esc(t('reveal.quiet'))}</p>
+         <p class="cap sys">${esc(when)}</p></div></div>`;
+  }
+
+  const left=(q.self-c.self)+(q.us-c.us);
+  return `<div class="sheet">
+    ${wash(300,210,'#D9A05B',0.13,'wash1')}
+    <div class="head">
+      <h1 class="ym">${esc(y)} · ${esc(m)}</h1>
+      <button class="who-btn" id="settings">${esc(S.user)}</button>
+    </div>
+    <p class="cap sys" style="margin:0">${left>0?esc(t('home.quotaLeft',{n:left})):esc(t('home.quotaFull'))}</p>
+
+    <div class="rule" id="r1"></div>
+
+    <section class="group">
+      <div class="group-head">${wash(120,52,'#D9A05B',0.26,'wash2')}
+        <h2>${esc(t('home.self'))}</h2>
+        <span class="led">${c.self} / ${q.self}</span></div>
+      <div class="grid self${q.self>=7?' dense':''}">${selfSlots.join('')}</div>
+    </section>
+
+    <section class="group">
+      <div class="group-head">${wash(120,52,'#A6BC84',0.28,'wash1')}
+        <h2>${esc(t('home.us'))}</h2>
+        <span class="led">${c.us} / ${q.us}</span></div>
+      <div class="grid us">${usSlots.join('')}</div>
+    </section>
+
+    <section class="group">
+      <div class="group-head stack">${wash(120,52,'#C89A86',0.3,'wash1')}
+        <div class="row1"><h2>${esc(t('home.me'))}</h2>
+          <span class="led">${c.me||0} / ${q.me||1}</span></div>
+        <div class="sub">${esc(t('home.me.note'))}</div></div>
+      <div class="grid me">${meSlots.join('')}</div>
+    </section>
+
+    <div class="rule" id="r2"></div>
+
+    <section class="group opposite">
+      <div class="group-head">${wash(120,52,'#93B4C6',0.3,'wash2')}
+        <h2>${esc(S.partner)}</h2></div>
+      ${opposite}
+    </section>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════
+   畫面：小屋
+   ══════════════════════════════════════════ */
+function renderHut(){
+  const mine=(S.hut||[]).filter(p=>p.visibility==='private');
+  const body=mine.length
+    ? `<div class="grid self">${mine.map((p,i)=>frameHTML('self',i,p,{ns:'h'})).join('')}</div>
+       <p class="cap">${esc(t('hut.shareHint'))}</p>`
+    : `<div class="vig-wrap">${vignette('hut')}<div><p class="cap">${esc(t('hut.empty'))}</p>
+       <p class="cap sys">${esc(t('hut.shareHint'))}</p></div></div>`;
+  return `<div class="sheet">
+    ${wash(300,210,'#A6BC84',0.13,'wash2')}
+    <div class="head"><h1 class="ym">${esc(t('hut.title'))}</h1>
+      <button class="who-btn" id="settings">${esc(S.user)}</button></div>
+    <div class="rule" id="r1"></div>
+    ${body}
+    <div style="margin-top:30px">${btn(tf('hut.addOne','放一張進來'),'','data-add="self" data-priv="1"')}</div>
+  </div>`;
+}
+
+
+/* ══════════════════════════════════════════
+   印章
+   ══════════════════════════════════════════ */
+/** 哪一種東西能蓋哪些章 */
+function stampsFor(targetType,target){
+  const sets=S.stampSets||{};
+  if(targetType==='photo'&&target.kind==='me'&&sets.me)return sets.me;
+  return sets['default']||S.stamps||[];
+}
+
+function stampRow(targetType,target){
+  const list=target.stamps||[];
+  const mine=list.filter(x=>x.from===S.user)[0];
+  const theirs=list.filter(x=>x.from!==S.user)[0];
+  // 印章是回應對方，不是回應自己。自己的東西只顯示收到了什麼。
+  if(target.owner===S.user){
+    return theirs?`<div class="stamps${stampsFor(targetType,target).length===1?' solo':''}"><span class="st theirs">${esc(S.partner)}：${esc(labelOf(theirs.code))}</span></div>`:'';
+  }
+  const chips=stampsFor(targetType,target).map(st=>
+    `<button class="st ${mine&&mine.code===st.code?'mine':''}"
+      data-stamp="${st.code}" data-tt="${targetType}" data-ti="${esc(target.id)}">${esc(st.label)}</button>`).join('');
+  const solo=stampsFor(targetType,target).length===1?' solo':'';
+  return `<div class="stamps${solo}">${chips}</div>`;
+}
+function labelOf(code){
+  const all=[].concat(S.stamps||[]);
+  const sets=S.stampSets||{};
+  Object.keys(sets).forEach(k=>[].push.apply(all,sets[k]));
+  const f=all.filter(x=>x.code===code)[0];return f?f.label:code;
+}
+function bindStamps(root){
+  (root||document).querySelectorAll('[data-stamp]').forEach(b=>b.onclick=async()=>{
+    b.disabled=true;
+    try{
+      const r=await api('stamp',{targetType:b.dataset.tt,targetId:b.dataset.ti,stampCode:b.dataset.stamp});
+      const box=[].concat(S.quotes||[],S.view?S.view.mine:[],S.view?S.view.theirs:[]);
+      const item=box.filter(x=>x.id===b.dataset.ti)[0];
+      if(item)item.stamps=r.stamps;
+      const wrap=b.closest('.stamps');
+      if(wrap&&item){wrap.outerHTML=stampRow(b.dataset.tt,item);bindStamps(wrap.parentElement||document);}
+    }catch(e){b.disabled=false;}
+  });
+}
+
+/* ══════════════════════════════════════════
+   金句本
+   ══════════════════════════════════════════ */
+/** 題庫：所有 ask. 開頭的句子。在試算表加一列就會多一題。 */
+/** 題庫：所有 ask.NN。在試算表加一列 ask.13 就會多一題。 */
+function askPool(){
+  return Object.keys(S.copy||{}).filter(k=>/^ask\.\d+$/.test(k))
+    .sort().map(k=>S.copy[k]).filter(x=>String(x).trim());
+}
+
+function renderQuote(){
+  const all=S.quotes||[];
+  const list=S.qfilter?all.filter(q=>(q.kind||'quote')===S.qfilter):all;
+
+  const KINDS=['quote','note','ask','say'];
+  const count=k=>all.filter(q=>(q.kind||'quote')===k).length;
+  const fchip=(k,label,n)=>`<button class="chip ${S.qfilter===k?'on':''}"
+    data-f="${k}">${esc(label)}${n!==null?`<span class="n">${n}</span>`:''}</button>`;
+  const filters=all.length?`<div class="filters">
+    ${fchip('',t('quote.filter.all'),all.length)}
+    ${KINDS.filter(k=>count(k)).map(k=>fchip(k,t('quote.label.'+k),count(k))).join('')}
+  </div>`:'';
+
+  const body=list.length?list.map(q=>`
+    <article class="q" data-qid="${esc(q.id)}" data-kind="${esc(q.kind||'quote')}">
+      <div class="lab">${esc(t('quote.label.'+(q.kind||'quote')))}</div>
+      ${q.prompt?`<div class="q-tag">${esc(q.prompt)}${q.askedBy?
+        `　<span style="color:var(--blue)">${esc(t('quote.askedBy',{who:q.askedBy}))}</span>`:''}</div>`:''}
+      <div class="txt">${esc(q.text)}</div>
+      <div class="meta">
+        <span class="who">${esc(q.owner)}記下</span>
+        ${q.source?`<span class="src">— ${esc(q.source)}</span>`:''}
+        ${q.owner===S.user?`<button class="btn plain" data-edit="${esc(q.id)}"><span>改</span></button>
+          <button class="btn plain" data-del="${esc(q.id)}"><span style="color:#A3502A">${esc(t('delete'))}</span></button>`:''}
+      </div>
+      ${stampRow('quote',q)}
+    </article>`).join('')
+    : `<div class="vig-wrap">${vignette('cup')}<p class="cap">${esc(t('quote.empty'))}</p></div>`;
+
+  const door=(k,cls)=>`<button class="btn door ${cls||''}" data-door="${k}">
+    <svg preserveAspectRatio="none"></svg>
+    <span>${esc(t('quote.door.'+k,{who:S.partner}))}</span></button>`;
+
+  const asks=(S.pending||[]).map(p=>`
+    <div class="tossed" data-toss="${esc(p.id)}">
+      <svg preserveAspectRatio="none"></svg>
+      <div class="who">${esc(t('toss.title',{who:p.from}))}</div>
+      <div class="qq">${esc(p.prompt)}</div>
+      <div class="acts">
+        <button class="btn plain" data-ans="${esc(p.id)}"><span>${esc(t('toss.answer'))}</span></button>
+        <button class="btn plain" data-drop="${esc(p.id)}"><span>${esc(t('toss.drop'))}</span></button>
+      </div>
+    </div>`).join('');
+
+  return `<div class="sheet">
+    ${wash(300,210,'#D9A05B',0.12,'wash2')}
+    <div class="head"><h1 class="ym">${esc(t('quote.title'))}</h1>
+      <span class="led">${all.length}</span></div>
+    <div class="rule" id="r1"></div>
+    ${asks}
+    ${filters}
+    ${body}
+    <div class="doors">${door('quote')}${door('note')}${door('say','say')}${door('ask','ask')}</div>
+  </div>`;
+}
+
+/**
+ * kind: 'quote' 聽到的一句話｜'note' 想到的一件事｜'ask' 抽到的一題
+ * existing 有值時是修改。
+ */
+function panelQuote(kind,existing,existingToss){
+  const k=existing?(existing.kind||'quote'):(kind||'quote');
+  const ph=tk('quote.placeholder',k);   // 找不到專屬的就退回通用的
+  const askBlock=(k==='ask'&&!existing)?`
+    <div class="slip" id="slip">
+      <div class="glow"></div>${mistSVG()}
+      <svg class="frame" preserveAspectRatio="none"></svg>
+      <div class="q" id="qq">　</div></div>
+    <div class="field hide" id="ownwrap" style="margin-top:10px">
+      <input id="ownq" placeholder="${esc(t('quote.ask.ownHint'))}"></div>
+    <p class="cap sys" style="margin:2px 0 0;text-align:center" id="askhint">${esc(t('quote.ask.hint'))}</p>
+    <div style="display:flex;justify-content:center;gap:10px;margin-top:10px">
+      ${btn(t('quote.ask.again'),'','id="again"')}${btn(t('quote.ask.own'),'','id="own"')}</div>`:'';
+  const askTag=(k==='ask'&&existing&&existing.prompt)
+    ? `<p class="q-tag">${esc(existing.prompt)}</p>`:'';
+
+  const v=panel(`
+    <h3>${esc(existing?t('edit.title'):t('quote.door.'+k,{who:S.partner}))}</h3>
+    ${askBlock}${askTag}
+    <div class="field" style="margin-top:${k==='ask'?'16':'8'}px">
+      <textarea id="qt" rows="3" placeholder="${esc(ph)}">${esc(existing?existing.text:'')}</textarea></div>
+    ${(k==='quote')?`<div class="field" style="margin-top:14px">
+        <input id="qs" placeholder="${esc(t('quote.source'))}"
+          value="${esc(existing?(existing.source||''):'')}"></div>`:''}
+    ${existing?`<p class="note">${esc(t('edit.notice'))}</p>`:''}
+    <div class="err" id="e"></div>
+    <div class="row">${(k==='ask'&&!existing)?'':btn(tf('ui.cancel','先不要'),'','id="no"')}
+      ${(k==='ask'&&!existing)?btn(t('quote.ask.toss'),'','id="toss"'):''}
+      ${btn((k==='ask'&&!existing)?t('quote.ask.mine'):tf('ui.record','記下來'),'warm','id="ok"')}</div>`);
+
+  let drawn='', own=false;
+  if(k==='ask'&&!existing){
+    const slip=v.querySelector('#slip'), qq=v.querySelector('#qq');
+    const ownwrap=v.querySelector('#ownwrap'), ownq=v.querySelector('#ownq');
+    const hint=v.querySelector('#askhint'), again=v.querySelector('#again');
+    inkSlip(slip);
+
+    const roll=()=>{
+      const pool=askPool();
+      if(!pool.length){qq.textContent=tf('err.emptyPool','題庫是空的');return;}
+      slip.classList.remove('landed');
+      slip.classList.add('rolling');
+      let n=0;
+      const iv=setInterval(()=>{
+        qq.textContent=pool[Math.floor(Math.random()*pool.length)];
+        if(++n>=16){
+          clearInterval(iv);
+          drawn=pool[Math.floor(Math.random()*pool.length)];
+          qq.textContent=drawn;
+          slip.classList.remove('rolling');
+          slip.classList.add('landed');   // 霧退去，字浮現
+        }
+      },58);
+    };
+    roll();
+    again.onclick=roll;
+
+    // 自己出題 —— 跟抽題其實是同一件事，差別只在題目哪裡來的
+    v.querySelector('#own').onclick=()=>{
+      own=!own;
+      slip.classList.toggle('hide',own);
+      again.classList.toggle('hide',own);
+      ownwrap.classList.toggle('hide',!own);
+      hint.textContent=own?t('quote.ask.ownHint'):t('quote.ask.hint');
+      if(own)setTimeout(()=>ownq.focus(),60);
+      paintFields(v);
+    };
+
+    v.querySelector('#toss').onclick=async()=>{
+      const q=own?ownq.value.trim():drawn;
+      if(!q){v.querySelector('#e').textContent=tf('err.noPrompt','還沒有題目');return;}
+      const tb=v.querySelector('#toss');tb.disabled=true;
+      v.querySelector('#e').innerHTML='<span class="spin"></span>';
+      try{
+        await api('toss',{prompt:q,origin:own?'own':'draw'});
+        v.remove();toast(t('app.name'),t('toss.sent'));
+      }catch(e){tb.disabled=false;v.querySelector('#e').textContent=e.message;}
+    };
+  }
+
+  const noBtn=v.querySelector('#no');
+  if(noBtn)noBtn.onclick=()=>v.remove();
+  v.querySelector('#ok').onclick=async()=>{
+    const text=v.querySelector('#qt').value.trim();
+    if(!text){v.querySelector('#e').textContent=tf('err.empty','還沒寫東西');return;}
+    const ok=v.querySelector('#ok');ok.disabled=true;
+    v.querySelector('#e').innerHTML='<span class="spin"></span>';
+    try{
+      if(existing){
+        const src=v.querySelector('#qs');
+        await api('updateQuote',{id:existing.id,text,
+          source:src?src.value.trim():undefined});
+      }
+      else{
+        const src=v.querySelector('#qs');
+        const ownq=v.querySelector('#ownq');
+        const p=(k==='ask')?(own&&ownq?ownq.value.trim():drawn):'';
+        await api('addQuote',{kind:k,text,
+          source:src?src.value.trim():'', prompt:p, tossId:existingToss});
+      }
+      v.remove();S.quotes=await api('listQuotes',{});render();
+    }catch(e){ok.disabled=false;v.querySelector('#e').textContent=e.message;}
+  };
+}
+
+/** 回答對方丟過來的題目 */
+function panelAnswer(p){
+  const v=panel(`
+    <h3>${esc(t('toss.title',{who:p.from}))}</h3>
+    <p class="q-tag" style="margin:8px 0 0">${esc(p.prompt)}</p>
+    <div class="field" style="margin-top:12px">
+      <textarea id="qt" rows="3" placeholder="${esc(t('quote.placeholder.ask'))}"></textarea></div>
+    <div class="err" id="e"></div>
+    <div class="row">${btn(t('toss.later'),'','id="no"')}${btn(tf('ui.record','記下來'),'warm','id="ok"')}</div>`);
+  v.querySelector('#no').onclick=()=>v.remove();
+  v.querySelector('#ok').onclick=async()=>{
+    const text=v.querySelector('#qt').value.trim();
+    if(!text){v.querySelector('#e').textContent=tf('err.empty','還沒寫東西');return;}
+    const ok=v.querySelector('#ok');ok.disabled=true;
+    v.querySelector('#e').innerHTML='<span class="spin"></span>';
+    try{
+      await api('addQuote',{kind:'ask',text,tossId:p.id});
+      v.remove();
+      S.pending=(S.pending||[]).filter(x=>x.id!==p.id);
+      S.quotes=await api('listQuotes',{});render();
+    }catch(e){ok.disabled=false;v.querySelector('#e').textContent=e.message;}
+  };
+}
+
+/* 紙籤的外框與霧 */
+function inkSlip(el){
+  const svg=el.querySelector('svg.frame');
+  const draw=()=>{const w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;
+    svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
+    svg.innerHTML=`<path d="${inkRectPath(w-4,h-4,7,1.9,3.4)}" transform="translate(2,2)"/>`;};
+  draw();if(window.ResizeObserver)new ResizeObserver(draw).observe(el);
+}
+
+function mistSVG(){
+  return `<svg class="mist" viewBox="0 0 200 120" preserveAspectRatio="none" aria-hidden="true">
+    <g filter="url(#mist)">
+      <ellipse cx="62" cy="52" rx="66" ry="40" fill="#D9A05B" opacity=".5"/>
+      <ellipse cx="140" cy="66" rx="72" ry="44" fill="#C89A86" opacity=".45"/>
+      <ellipse cx="104" cy="40" rx="58" ry="34" fill="#E8D2A6" opacity=".55"/>
+    </g></svg>`;
+}
+
+/* ══════════════════════════════════════════
+   任性罐
+   ══════════════════════════════════════════ */
+/* 罐子的輪廓。用筆刷畫，所以是一圈粗細不勻的墨線，不是實心色塊。 */
+/* ══════════════════════════════════════════
+   任性罐
+   罐子的高度由容量決定，彈珠用金字塔堆疊。
+   五顆的罐子就該是五顆的大小。
+   ══════════════════════════════════════════ */
+
+/* 每顆彈珠：底色、紋路、亮部 */
+const MARBLE=[
+  {b:'#C98A3C',s:'#E8C07A',t:'#8E5A18'},   // 琥珀
+  {b:'#8B9B72',s:'#B8C79A',t:'#5C6B45'},   // 苔
+  {b:'#7A93A3',s:'#AFC6D2',t:'#4C6675'},   // 灰藍
+  {b:'#B5703C',s:'#DDA070',t:'#7A4520'},   // 赭
+  {b:'#C9A961',s:'#EBD69C',t:'#8F7333'},   // 蜜
+  {b:'#9E8468',s:'#C8B199',t:'#6B5540'},   // 灰褐
+  {b:'#A8737A',s:'#D2A3A8',t:'#734A50'},   // 乾玫瑰
+  {b:'#6F8C86',s:'#A3BEB8',t:'#47605B'}    // 灰青
+];
+
+/** 金字塔堆疊：底層 b 顆，往上每層少一顆，剛好裝滿容量 */
+function pileRows(cap){
+  let b=1; while(b*(b+1)/2<cap)b++;
+  const rows=[];let left=cap;
+  for(let n=b;n>0&&left>0;n--){const k=Math.min(n,left);rows.push(k);left-=k;}
+  return rows;                      // [底層, ..., 頂層]
+}
+
+function jarPath(w,h,seed){
+  const r=rng(seed),j=k=>(r()-.5)*k;
+  const nx=w*0.34,nw=w*0.32;
+  const pts=[
+    [nx+j(2),      h*0.05],
+    [nx+j(2),      h*0.13],
+    [w*0.14+j(2),  h*0.20],
+    [w*0.075+j(2), h*0.33],
+    [w*0.06+j(2),  h*0.50],
+    [w*0.06+j(2),  h*0.86],
+    [w*0.11+j(2),  h*0.95],
+    [w*0.26+j(2),  h*0.975],
+    [w*0.74+j(2),  h*0.975],
+    [w*0.89+j(2),  h*0.95],
+    [w*0.94+j(2),  h*0.86],
+    [w*0.94+j(2),  h*0.50],
+    [w*0.925+j(2), h*0.33],
+    [w*0.86+j(2),  h*0.20],
+    [nx+nw+j(2),   h*0.13],
+    [nx+nw+j(2),   h*0.05]
+  ];
+  return brush(densify(pts,true,7),true,w>110?2.2:1.6,seed);
+}
+
+function jarSVG(count,capacity,seed,w){
+  w=w||186;
+  const cap=Math.max(1,capacity||5);
+  const rows=pileRows(cap);
+  const base=rows[0];
+
+  // 彈珠大小由底層決定，讓最寬那排剛好貼著瓶壁
+  const inner=w*0.72;
+  const rad=Math.min(inner/(2*base), w*0.155);
+  const dy=rad*1.68;                       // 上下層咬合的高度
+  const pileH=rad*2+(rows.length-1)*dy;
+
+  // 上方只留一點空氣。罐子的高度跟著堆疊走，不是固定的。
+  const headroom=rad*1.15+w*0.04;
+  const bodyH=pileH+headroom;
+  const h=bodyH/0.79;                      // 瓶身（含頸）佔全高的比例
+  const bottom=h*0.945;
+
+  const r=rng(seed+17);
+  let defs='',shadows='',balls='';
+  let placed=0;
+
+  for(let ri=0;ri<rows.length;ri++){
+    const n=rows[ri];
+    const y=bottom-rad-ri*dy;
+    const startX=w/2-(n-1)*rad*2/2;
+    for(let i=0;i<n;i++){
+      const jx=(r()-.5)*rad*0.14, jy=(r()-.5)*rad*0.10;
+      const cx=startX+i*rad*2+jx, cy=y+jy;
+      const rr=rad*(0.93+r()*0.12);
+      const filled=placed<count;
+
+      if(filled){
+        const m=MARBLE[(placed*3+ri)%MARBLE.length];
+        const id='mb'+seed+'_'+placed;
+        const ang=Math.round(r()*180);
+        defs+=`<radialGradient id="${id}" cx="34%" cy="30%" r="72%">
+          <stop offset="0%" stop-color="${m.s}"/>
+          <stop offset="58%" stop-color="${m.b}"/>
+          <stop offset="100%" stop-color="${m.t}"/></radialGradient>`;
+        // 接觸陰影：讓它看起來是壓在下面那顆上
+        shadows+=`<ellipse cx="${(cx+rr*0.12).toFixed(1)}" cy="${(cy+rr*0.86).toFixed(1)}"
+          rx="${(rr*0.78).toFixed(1)}" ry="${(rr*0.22).toFixed(1)}"
+          fill="#2B2724" opacity=".16"/>`;
+        balls+=`<g>
+          <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${rr.toFixed(1)}"
+            fill="url(#${id})" stroke="rgba(43,39,36,.28)" stroke-width="${(rr*0.055).toFixed(2)}"/>
+          <ellipse cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}"
+            rx="${(rr*0.62).toFixed(1)}" ry="${(rr*0.2).toFixed(1)}"
+            fill="${m.s}" opacity=".5"
+            transform="rotate(${ang} ${cx.toFixed(1)} ${cy.toFixed(1)})"/>
+          <ellipse cx="${(cx-rr*0.34).toFixed(1)}" cy="${(cy-rr*0.4).toFixed(1)}"
+            rx="${(rr*0.3).toFixed(1)}" ry="${(rr*0.19).toFixed(1)}"
+            fill="#fff" opacity=".62"
+            transform="rotate(-28 ${(cx-rr*0.34).toFixed(1)} ${(cy-rr*0.4).toFixed(1)})"/>
+        </g>`;
+      }else{
+        balls+=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${(rad*0.9).toFixed(1)}"
+          fill="none" stroke="rgba(43,39,36,.14)" stroke-width="1" stroke-dasharray="3 4"/>`;
+      }
+      placed++;
+    }
+  }
+
+  const lidY=h*0.045;
+  return `<svg viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}" role="img"
+    aria-label="任性罐，${count} 顆，共 ${cap} 格">
+    <defs>${defs}</defs>
+    <ellipse cx="${w/2}" cy="${(h*0.985).toFixed(1)}" rx="${(w*0.40).toFixed(1)}"
+      ry="${(h*0.022).toFixed(1)}" fill="#2B2724" opacity=".10"/>
+    ${shadows}${balls}
+    <path class="glass" d="${brush([[w*0.29,lidY],[w*0.71,lidY]],false,w>110?2.3:1.7,seed+5)}"/>
+    <path class="glass" d="${jarPath(w,h,seed)}"/>
+    <rect x="${(w*0.145).toFixed(1)}" y="${(h*0.34).toFixed(1)}"
+      width="${(w*0.05).toFixed(1)}" height="${(h*0.46).toFixed(1)}"
+      rx="${(w*0.025).toFixed(1)}" fill="#fff" opacity=".36"/>
+    <rect x="${(w*0.815).toFixed(1)}" y="${(h*0.40).toFixed(1)}"
+      width="${(w*0.026).toFixed(1)}" height="${(h*0.30).toFixed(1)}"
+      rx="${(w*0.013).toFixed(1)}" fill="#fff" opacity=".22"/>
+  </svg>`;
+}
+
+function renderJar(){
+  const j=S.jar||{marbles:0,capacity:10,jarIndex:1,storedJarList:[],myUnusedWishes:0};
+  const stored=(j.storedJarList||[]).map(x=>`
+    <div class="mini">${jarSVG(j.capacity,j.capacity,900+x.jarIndex,84)}
+      <div class="w">${esc(x.wish||'—')}</div></div>`).join('');
+  const wishes=(S.wishes||[]);
+  const drawn=wishes.filter(w=>w.status==='drawn');
+  const mineWaiting=wishes.filter(w=>w.mine&&w.status==='unused');
+
+  const mineHTML=mineWaiting.length
+    ? mineWaiting.map(w=>`<div class="wish">${esc(w.text)}
+        <button class="btn plain wdel" data-wdel="${esc(w.id)}"
+          ><span style="color:#A3502A">${esc(t('delete'))}</span></button></div>`).join('')
+    : `<p class="cap sys" style="margin:0">${esc(t('wish.mineNone'))}</p>`;
+
+  const drawnHTML=drawn.length?drawn.map(w=>
+    `<div class="wish"><span class="who">${w.mine?esc(tf('wish.byMe','你寫的')):esc(tf('wish.byThem','{who}寫的',{who:S.partner}))}</span>${esc(w.text)}</div>`).join(''):'';
+
+  return `<div class="sheet">
+    ${wash(300,210,'#93B4C6',0.13,'wash1')}
+    <div class="head"><h1 class="ym">${esc(t('jar.title'))}</h1>
+      <span class="led">${esc(tf('jar.nth','第 {n} 罐',{n:j.jarIndex}))}</span></div>
+    <div class="jarwrap">${jarSVG(j.marbles,j.capacity,j.jarIndex*31,186)}</div>
+    <p class="cap sys" style="text-align:center">${esc(t('jar.progress',{n:j.marbles}))} / ${j.capacity}</p>
+
+    ${stored?`<section class="sec"><h2>${esc(tf('jar.store','倉庫'))}</h2>
+      <p class="cap sys" style="margin:0">${esc(t('jar.stored',{n:j.storedJars}))}</p>
+      <div class="shelf">${stored}</div></section>`:''}
+
+    <section class="sec">
+      <h2>${esc(t('wish.title'))}</h2>
+      <p class="note" style="margin-top:2px">${esc(t('wish.note'))}</p>
+
+      <h3 class="subh">${esc(t('wish.mineTitle'))}
+        <span class="led">${mineWaiting.length}</span></h3>
+      <p class="cap sys" style="margin:0 0 4px">${esc(t('wish.onlyYou'))}</p>
+      ${mineHTML}
+
+      ${drawnHTML?`<h3 class="subh">${esc(t('wish.drawnTitle'))}</h3>${drawnHTML}`:''}
+
+      <div class="add-fab">${btn(tf('wish.addOne','放一支進去'),'','id="addw"')}</div>
+    </section>
+  </div>`;
+}
+
+function panelWish(){
+  const v=panel(`<h3>${esc(t('wish.title'))}</h3>
+    <p class="note">${esc(t('wish.note'))}</p>
+    <div class="field" style="margin-top:10px">
+      <textarea id="wt" rows="2" placeholder="${esc(t('wish.placeholder'))}"></textarea></div>
+    <div class="err" id="e"></div>
+    <div class="row">${btn(tf('ui.cancel','先不要'),'','id="no"')}${btn(tf('ui.put','放進去'),'warm','id="ok"')}</div>`);
+  v.querySelector('#no').onclick=()=>v.remove();
+  v.querySelector('#ok').onclick=async()=>{
+    const text=v.querySelector('#wt').value.trim();
+    if(!text){v.querySelector('#e').textContent=tf('err.empty','還沒寫東西');return;}
+    const ok=v.querySelector('#ok');ok.disabled=true;
+    try{await api('addWish',{text});v.remove();await loadJar();render();}
+    catch(e){ok.disabled=false;v.querySelector('#e').textContent=e.message;}
+  };
+}
+
+async function loadJar(){
+  S.jar=await api('jarState',{});
+  S.wishes=await api('listWishes',{});
+}
+
+/* ══════════════════════════════════════════
+   繪製主體
+   ══════════════════════════════════════════ */
+function nav(){
+  const n=(S.pending||[]).length;
+  const item=(k,label,off)=>`<button data-tab="${k}" class="${S.tab===k?'on':''}" ${off?'disabled':''}
+    >${esc(label)}${(k==='quote'&&n&&S.tab!=='quote')?'<span class="dot"></span>':''}</button>`;
+  return `<div class="nav"><div class="inner">
+    ${item('month',tf('nav.month','這個月'))}${item('hut',t('hut.title'))}
+    ${item('quote',t('quote.title'))}${item('jar',t('jar.title'))}
+  </div></div>`;
+}
+
+function render(){
+  washDefs();
+  if(!localStorage.getItem(LS.seen)){screenWelcome();return;}
+  const app=document.getElementById('app');
+  const page=S.tab==='hut'?renderHut()
+    :S.tab==='quote'?renderQuote()
+    :S.tab==='jar'?renderJar():renderMonth();
+  app.innerHTML=page+nav();
+  ['r1','r2'].forEach((id,i)=>{const el=document.getElementById(id);if(el)inkRule(el,7+i*13)});
+  document.querySelectorAll('.frame').forEach(f=>inkBox(f,Number(f.dataset.seed)));
+  paintButtons();
+  loadImages();
+
+  app.querySelectorAll('[data-tab]').forEach(b=>b.onclick=async()=>{
+    S.tab=b.dataset.tab;
+    try{
+      if(S.tab==='hut'&&!S.hut)await loadHut();
+      if(S.tab==='quote'&&!S.quotes)S.quotes=await api('listQuotes',{});
+      if(S.tab==='jar'&&!S.jar)await loadJar();
+    }catch(e){}
+    render();
+  });
+  bindStamps(app);
+  const sb=app.querySelector('#settings');if(sb)sb.onclick=()=>panelSettings();
+  app.querySelectorAll('[data-door]').forEach(b=>
+    b.onclick=()=>panelQuote(b.dataset.door,null));
+  app.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{
+    S.qfilter=b.dataset.f;render();
+  });
+  app.querySelectorAll('.tossed').forEach(el=>{
+    const svg=el.querySelector('svg');
+    const draw=()=>{const w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;
+      svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
+      svg.innerHTML=`<path d="${inkRectPath(w-4,h-4,hash(el.dataset.toss),1.6,3)}" transform="translate(2,2)"/>`;};
+    draw();if(window.ResizeObserver)new ResizeObserver(draw).observe(el);
+  });
+  app.querySelectorAll('[data-ans]').forEach(b=>b.onclick=()=>{
+    const p=(S.pending||[]).filter(x=>x.id===b.dataset.ans)[0];
+    if(p)panelAnswer(p);
+  });
+  app.querySelectorAll('[data-drop]').forEach(b=>b.onclick=async()=>{
+    b.disabled=true;
+    try{await api('dismissToss',{id:b.dataset.drop});
+      S.pending=(S.pending||[]).filter(x=>x.id!==b.dataset.drop);render();}
+    catch(e){b.disabled=false;}
+  });
+  const aw=app.querySelector('#addw');if(aw)aw.onclick=()=>panelWish();
+  app.querySelectorAll('[data-wdel]').forEach(b=>b.onclick=()=>
+    confirmDelete('wish',async()=>{
+      await api('deleteWish',{id:b.dataset.wdel});
+      await loadJar();render();
+    }));
+  app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>
+    confirmDelete('quote',async()=>{
+      await api('deleteQuote',{id:b.dataset.del});
+      S.quotes=await api('listQuotes',{});render();
+    }));
+  app.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{
+    const q=(S.quotes||[]).filter(x=>x.id===b.dataset.edit)[0];
+    if(q)panelQuote(q.kind||'quote',q);
+  });
+  app.querySelectorAll('[data-add]').forEach(el=>{
+    const fire=()=>openPicker(el.dataset.add,el.dataset.priv==='1'||S.tab==='hut');
+    el.onclick=fire;
+    el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fire()}};
+  });
+  app.querySelectorAll('.frame img').forEach(img=>{
+    img.parentElement.onclick=()=>openPhoto(img.dataset.pid);
+  });
+}
+
+/* 照片存進瀏覽器的快取，關掉再開也還在，不用再跟後端要一次。 */
+async function photoStore(){
+  if(!('caches' in window))return null;
+  try{return await caches.open('junou-photos-v1');}catch(e){return null;}
+}
+
+async function getPhoto(id){
+  if(S.imgCache[id])return S.imgCache[id];
+  const store=await photoStore();
+  if(store){
+    try{
+      const hit=await store.match('/photo/'+id);
+      if(hit){const u=await hit.text();S.imgCache[id]=u;return u;}
+    }catch(e){}
+  }
+  const d=await api('photoData',{id});
+  const url='data:'+d.mimeType+';base64,'+d.dataBase64;
+  S.imgCache[id]=url;
+  if(store){try{await store.put('/photo/'+id,new Response(url));}catch(e){}}
+  return url;
+}
+
+function paint(img,url){
+  img.src=url;
+  img.onload=()=>img.classList.add('in');
+  if(img.complete)img.classList.add('in');
+}
+
+async function loadImages(){
+  const imgs=[...document.querySelectorAll('.frame img[data-pid]')];
+  const store=await photoStore();
+  const missing=[];
+
+  // 先把快取裡有的畫出來
+  for(const img of imgs){
+    const id=img.dataset.pid;
+    let url=S.imgCache[id];
+    if(!url&&store){
+      try{const hit=await store.match('/photo/'+id);if(hit){url=await hit.text();S.imgCache[id]=url;}}
+      catch(e){}
+    }
+    if(url)paint(img,url); else missing.push(img);
+  }
+  if(!missing.length)return;
+
+  // 剩下的一次要完。每通請求都是一次來回，七張打七通會很慢。
+  for(let i=0;i<missing.length;i+=10){
+    const chunk=missing.slice(i,i+10);
+    try{
+      const rows=await api('photoBatch',{ids:chunk.map(x=>x.dataset.pid)});
+      const byId={};
+      for(const r of rows){
+        const url='data:'+r.mimeType+';base64,'+r.dataBase64;
+        byId[r.id]=url;S.imgCache[r.id]=url;
+        if(store){try{await store.put('/photo/'+r.id,new Response(url));}catch(e){}}
+      }
+      chunk.forEach(img=>{const u=byId[img.dataset.pid];if(u)paint(img,u);});
+    }catch(e){/* 還沒揭曉或讀不到，就讓框空著 */}
+  }
+}
+
+/* ══════════════════════════════════════════
+   上傳
+   ══════════════════════════════════════════ */
+let pick={file:null,kind:'self',priv:false,dataUrl:''};
+
+function openPicker(kind,priv){
+  pick={file:null,kind:kind||'self',priv:!!priv,dataUrl:''};
+  const inp=document.createElement('input');
+  inp.type='file';inp.accept='image/*';
+  inp.onchange=async()=>{
+    if(!inp.files||!inp.files[0])return;
+    const shrunk=await shrink(inp.files[0]);
+    pick.dataUrl=shrunk.dataUrl;pick.b64=shrunk.b64;pick.mime=shrunk.mime;
+    panelUpload();
+  };
+  inp.click();
+}
+
+/* 縮到長邊 1800，避免 base64 塞爆 Apps Script 的請求上限 */
+function shrink(file){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        const max=1800,sc=Math.min(1,max/Math.max(img.width,img.height));
+        const w=Math.round(img.width*sc),h=Math.round(img.height*sc);
+        const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+        cv.getContext('2d').drawImage(img,0,0,w,h);
+        const url=cv.toDataURL('image/jpeg',.86);
+        res({dataUrl:url,b64:url.split(',')[1],mime:'image/jpeg'});
+      };
+      img.onerror=rej;img.src=fr.result;
+    };
+    fr.onerror=rej;fr.readAsDataURL(file);
+  });
+}
+
+function panel(html){
+  const v=document.createElement('div');v.className='veil';
+  v.innerHTML=`<div class="panel">
+    <button class="x" aria-label="關起來">✕</button>${html}</div>`;
+  v.onclick=e=>{if(e.target===v)v.remove()};
+  v.querySelector('.x').onclick=()=>v.remove();
+  document.body.appendChild(v);
+  paintFields(v);paintButtons(v);
+  return v;
+}
+
+/** 刪掉之前先問一次。 */
+function confirmDelete(kind,onYes){
+  const note=kind==='photo'?t('delete.photo'):t('delete.note');
+  const v=panel(`<h3>${esc(t('delete.ask'))}</h3>
+    <p class="note">${esc(note)}</p>
+    <div class="err" id="e"></div>
+    <div class="row">${btn(t('delete.no'),'','id="no"')}${btn(t('delete'),'danger','id="yes"')}</div>`);
+  v.querySelector('#no').onclick=()=>v.remove();
+  v.querySelector('#yes').onclick=async()=>{
+    const y=v.querySelector('#yes');y.disabled=true;
+    v.querySelector('#e').innerHTML='<span class="spin"></span>';
+    try{await onYes();v.remove();}
+    catch(e){y.disabled=false;v.querySelector('#e').textContent=e.message;}
+  };
+}
+
+function panelUpload(){
+  const chip=(k,l)=>`<button class="chip ${pick.kind===k?'on':''}" data-k="${k}">${esc(l)}</button>`;
+  const v=panel(`
+    <img class="preview" src="${pick.dataUrl}" alt="">
+    <div class="choices">${chip('self',t('home.self'))}${chip('us',t('home.us'))}${chip('me',t('home.me'))}</div>
+    <div class="field" style="margin-top:14px">
+      <textarea id="cap" rows="1" placeholder="${esc(tk('upload.caption',pick.kind))}"></textarea></div>
+    <div class="choices" style="margin-top:16px">
+      <button class="chip ${pick.priv?'':'on'}" data-p="0">${esc(t('upload.toBoard'))}</button>
+      <button class="chip ${pick.priv?'on':''}" data-p="1">${esc(t('upload.toHut'))}</button>
+    </div>
+    <div class="err" id="e"></div>
+    <div class="row">${btn(tf('ui.cancel','先不要'),'','id="no"')}${btn(tf('ui.put','放進去'),'warm','id="ok"')}</div>`);
+
+  v.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{
+    pick.kind=b.dataset.k;
+    v.querySelectorAll('[data-k]').forEach(x=>x.classList.toggle('on',x.dataset.k===pick.kind));
+    const cap=v.querySelector('#cap');
+    if(cap)cap.setAttribute('placeholder',tk('upload.caption',pick.kind));
+  });
+  v.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{
+    pick.priv=b.dataset.p==='1';
+    v.querySelectorAll('[data-p]').forEach(x=>x.classList.toggle('on',(x.dataset.p==='1')===pick.priv));
+  });
+  v.querySelector('#no').onclick=()=>v.remove();
+  v.querySelector('#ok').onclick=()=>send(v,false,'');
+}
+
+async function send(v,willful,reason){
+  const cap=v.querySelector('#cap');
+  const err=v.querySelector('#e');
+  const ok=v.querySelector('#ok');
+  if(ok){ok.disabled=true;}
+  if(err)err.innerHTML='<span class="spin"></span>';
+  try{
+    const r=await api('uploadPhoto',{
+      kind:pick.kind,visibility:pick.priv?'private':'shared',
+      caption:cap?cap.value:pick.caption||'',
+      dataBase64:pick.b64,mimeType:pick.mime,
+      willful:willful,reason:reason
+    });
+    if(r.needWillful){pick.caption=cap?cap.value:'';v.remove();panelWillful(r);return;}
+    v.remove();
+    S.hut=null;
+    await refresh();
+    S.jar=null;S.wishes=null;
+    if(r.jar&&r.jar.justFilled)panelJarFilled(r.jar);
+  }catch(e){
+    if(ok)ok.disabled=false;
+    if(err)err.textContent=e.message;
+  }
+}
+
+function panelWillful(info){
+  const v=panel(`
+    <h3>${esc(t('willful.title'))}</h3>
+    <p class="note">${esc(tk('willful.body',info.kind))}</p>
+    <p class="cap sys" style="margin:14px 0 0">${esc(t('home.'+info.kind))} ${info.used} / ${info.limit}</p>
+    <div class="field" style="margin-top:8px">
+      <textarea id="why" rows="2" placeholder="${esc(t('willful.placeholder'))}"></textarea></div>
+    <div class="err" id="e"></div>
+    <div class="row">${btn('算了','','id="no"')}${btn(t('willful.confirm'),'warm','id="ok"')}</div>`);
+  v.querySelector('#no').onclick=()=>v.remove();
+  v.querySelector('#ok').onclick=()=>{
+    const why=v.querySelector('#why').value.trim();
+    if(!why){v.querySelector('#e').textContent=tf('err.needReason','要說一句為什麼');return;}
+    send(v,true,why);
+  };
+}
+
+function panelJarFilled(jar){
+  const wish=jar.drawnWish
+    ? `<p class="cap">${esc(t('jar.draw'))}</p>
+       <p style="font-size:1.15rem;margin:10px 0 0;padding-left:14px;border-left:2px solid var(--ochre)">${esc(jar.drawnWish.text)}</p>`
+    : `<p class="cap sys">${esc(t('wish.empty'))}</p>`;
+  const v=panel(`<h3>${esc(t('jar.title'))}</h3>
+    <p class="note">${esc(t('jar.filled'))}</p>${wish}
+    <div class="row">${btn(tf('ui.ok','好'),'warm','id="ok"')}</div>`);
+  v.querySelector('#ok').onclick=()=>v.remove();
+}
+
+/* ══════════════════════════════════════════
+   單張
+   ══════════════════════════════════════════ */
+function findPhoto(id){
+  const all=[].concat(S.view?S.view.mine:[],S.view?S.view.theirs:[],S.hut||[]);
+  return all.filter(p=>p.id===id)[0];
+}
+
+async function openPhoto(id){
+  const p=findPhoto(id);if(!p)return;
+  if(!S.imgCache[id]){try{await getPhoto(id);}catch(e){}}
+  const mine=p.owner===S.user;
+  let kind=p.kind||'self', priv=(p.visibility==='private');
+
+  const chip=(k,l)=>`<button class="chip ${kind===k?'on':''}" data-k="${k}">${esc(l)}</button>`;
+
+  // 預設是看，不是改。要動它得先按「改」—— 免得點開照片就誤觸。
+  const v=panel(`
+    <img class="preview" src="${S.imgCache[id]||''}" alt="">
+
+    <div id="view">
+      ${p.caption?`<p class="cap" style="margin-top:0">${esc(p.caption)}</p>`
+        :`<p class="cap sys" style="margin-top:0">${esc(t('caption.none'))}</p>`}
+      ${p.isLate?`<p class="cap sys">${esc(t('late.note'))}</p>`:''}
+      ${mine?`<div style="margin-top:14px">
+        <button class="btn plain" id="toedit"><span>${esc(t('edit.title'))}</span></button></div>`:''}
+    </div>
+
+    <div id="editbox" class="hide">
+      <div class="field"><textarea id="cap" rows="2"
+        placeholder="${esc(tk('upload.caption',p.kind))}">${esc(p.caption)}</textarea></div>
+      <p class="cap sys" style="margin:10px 0 0">${esc(t('edit.move'))}</p>
+      <div class="choices">${chip('self',t('home.self'))}${chip('us',t('home.us'))}${chip('me',t('home.me'))}</div>
+      <p class="cap sys" style="margin:14px 0 0">${esc(t('edit.where'))}</p>
+      <div class="choices">
+        <button class="chip ${priv?'':'on'}" data-p="0">${esc(t('upload.toBoard'))}</button>
+        <button class="chip ${priv?'on':''}" data-p="1">${esc(t('upload.toHut'))}</button>
+      </div>
+      <p class="note">${esc(t('edit.notice'))}</p>
+      <div style="margin-top:16px">
+        <button class="btn plain" id="del"><span style="color:#A3502A">${esc(t('delete'))}</span></button></div>
+    </div>
+
+    ${stampRow('photo',p)}
+    <div class="err" id="e"></div>
+    <div class="row">${btn(tf('ui.close','關起來'),'','id="no"')}${mine?btn(tf('ui.save','存好'),'warm hide','id="ok"'):''}</div>`);
+
+  bindStamps(v);
+  const view=v.querySelector('#view'), box=v.querySelector('#editbox'),
+        ok=v.querySelector('#ok');
+  v.querySelector('#no').onclick=()=>v.remove();
+
+  const toedit=v.querySelector('#toedit');
+  if(toedit)toedit.onclick=()=>{
+    view.classList.add('hide');
+    box.classList.remove('hide');
+    if(ok)ok.classList.remove('hide');
+    paintFields(v);
+  };
+
+  v.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{
+    kind=b.dataset.k;
+    v.querySelectorAll('[data-k]').forEach(x=>x.classList.toggle('on',x.dataset.k===kind));
+    const cap=v.querySelector('#cap');
+    if(cap)cap.setAttribute('placeholder',tk('upload.caption',kind));
+  });
+  v.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{
+    priv=b.dataset.p==='1';
+    v.querySelectorAll('[data-p]').forEach(x=>x.classList.toggle('on',(x.dataset.p==='1')===priv));
+  });
+
+  const del=v.querySelector('#del');
+  if(del)del.onclick=()=>confirmDelete('photo',async()=>{
+    await api('deletePhoto',{id});
+    delete S.imgCache[id];
+    if('caches' in window){try{const c=await caches.open('junou-photos-v1');
+      await c.delete('/photo/'+id);}catch(e){}}
+    v.remove();S.hut=null;await refresh();
+  });
+
+  if(ok)ok.onclick=async()=>{
+    ok.disabled=true;
+    v.querySelector('#e').innerHTML='<span class="spin"></span>';
+    try{
+      await api('updatePhoto',{id,caption:v.querySelector('#cap').value,
+        kind:kind, visibility:priv?'private':'shared'});
+      v.remove();S.hut=null;await refresh();
+    }catch(e){ok.disabled=false;v.querySelector('#e').textContent=e.message;}
+  };
+}
+
+/* ══════════════════════════════════════════
+   加到主畫面．推播
+   ══════════════════════════════════════════ */
+let deferredInstall=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;});
+
+function isStandalone(){
+  return window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone===true;
+}
+function isIOS(){return /iPad|iPhone|iPod/.test(navigator.userAgent);}
+
+async function initPush(){
+  if(!('serviceWorker' in navigator))return;
+  try{
+    await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+  }catch(e){return;}
+  if(Notification.permission==='granted')await grabToken();
+  S.swReady=true;
+}
+
+/** 拿裝置代號送回後端，順便留下心跳。每次打開都做一次。 */
+/** 回傳 {ok, why}。why 是給人看的，不是給程式判斷的。 */
+async function grabToken(){
+  if(typeof FIREBASE_CONFIG==='undefined')
+    return {ok:false,why:'讀不到 config.js'};
+  if(!FIREBASE_CONFIG.projectId)
+    return {ok:false,why:'config.js 裡的 projectId 是空的'};
+  if(!VAPID_KEY)
+    return {ok:false,why:'config.js 裡的 VAPID_KEY 是空的（手機可能還在讀舊版，重新整理一次）'};
+  try{
+    if(!window.firebase){
+      await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
+      await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
+    }
+  }catch(e){return {ok:false,why:'載不到 Firebase 的程式（網路或擋廣告的擴充功能）'};}
+  let reg;
+  try{ reg=await navigator.serviceWorker.ready; }
+  catch(e){return {ok:false,why:'背景執行緒沒起來（firebase-messaging-sw.js 沒上傳？）'};}
+  try{
+    if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);
+    const tok=await firebase.messaging().getToken(
+      {vapidKey:VAPID_KEY,serviceWorkerRegistration:reg});
+    if(!tok)return {ok:false,why:'Firebase 沒給代號'};
+    await api('registerPush',{fcmToken:tok});
+    watchForeground();
+    return {ok:true,why:'已登記，代號結尾 …'+tok.slice(-8)};
+  }catch(e){
+    return {ok:false,why:'Firebase：'+String(e&&e.message||e).slice(0,140)};
+  }
+}
+/**
+ * app 開著的時候，推播不會走系統通知，會走這裡。
+ * Firebase 的背景執行緒只在 app 沒開的時候接管。
+ */
+function watchForeground(){
+  try{
+    firebase.messaging().onMessage(async function(payload){
+      const n=(payload&&payload.notification)||{};
+      const title=n.title||t('app.name'), body=n.body||'';
+      toast(title,body);
+      // 開著也要系統通知的話，自己叫背景執行緒發一則。
+      if(localStorage.getItem(LS.fgSys)==='1'){
+        try{
+          const reg=await navigator.serviceWorker.ready;
+          reg.showNotification(title,{body:body,icon:'./icon-192.png',
+            badge:'./icon-192.png',tag:'junou-fg',renotify:true});
+        }catch(e){}
+      }
+    });
+  }catch(e){}
+}
+
+function toast(title,body){
+  const old=document.querySelector('.toast');if(old)old.remove();
+  const el=document.createElement('div');
+  el.className='toast';
+  el.innerHTML='<div class="t">'+esc(title)+'</div><div class="b">'+esc(body)+'</div>';
+  el.onclick=()=>el.remove();
+  document.body.appendChild(el);
+  setTimeout(()=>{if(el.parentNode)el.remove();},7000);
+}
+
+function loadScript(src){
+  return new Promise((res,rej)=>{const s=document.createElement('script');
+    s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+}
+
+async function askPush(){
+  if(!('Notification' in window))return '這個瀏覽器不支援通知';
+  if(!isStandalone()&&isIOS())return '在 iPhone 上要先加到主畫面才收得到';
+  const perm=await Notification.requestPermission();
+  if(perm!=='granted')return '你選了不接收';
+  const r=await grabToken();
+  return r.ok?'好了，這台裝置會收到':r.why;
+}
+
+function panelSettings(){
+  const push=(typeof Notification!=='undefined')?Notification.permission:'unsupported';
+  const cfgOk=(typeof VAPID_KEY!=='undefined'&&VAPID_KEY)?'':'　⚠ 讀不到 VAPID_KEY';
+  const pushLine=push==='granted'?'這台裝置會收到'+cfgOk
+    :push==='denied'?'你之前選了不接收，要到瀏覽器設定裡改'+cfgOk
+    :'還沒開。沒開的話提醒會用 Email 寄'+cfgOk;
+  const installLine=isStandalone()?'已經在主畫面上了'
+    :isIOS()?'按瀏覽器的分享鍵，選「加入主畫面」'
+    :deferredInstall?'裝起來就會像一個 app':'從瀏覽器選單選「安裝」或「加到主畫面」';
+
+  const v=panel(`<h3>${esc(tf('set.title','設定'))}</h3>
+    <div class="set-row">
+      <div><div class="t">${esc(tf('set.push','提醒'))}</div><div class="s" id="ps">${esc(pushLine)}</div></div>
+      ${btn(push==='granted'?tf('set.pushAgain','重新登記'):tf('set.pushOn','開啟'),'warm','id="onpush"')}
+    </div>
+    <div class="set-row">
+      <div><div class="t">${esc(tf('set.fgSystem','開著也要系統通知'))}</div>
+        <div class="s">${esc(tf('set.fgNote','關掉的話，app 開在眼前時只會在畫面上顯示'))}</div></div>
+      <button class="chip ${localStorage.getItem(LS.fgSys)==='1'?'on':''}" id="fgsys"
+        >${localStorage.getItem(LS.fgSys)==='1'?esc(tf('ui.on','開')):esc(tf('ui.off','關'))}</button>
+    </div>
+    <div class="set-row">
+      <div><div class="t">${esc(tf('set.install','加到主畫面'))}</div><div class="s">${esc(installLine)}</div></div>
+      ${(!isStandalone()&&deferredInstall)?btn(tf('set.installNow','裝起來'),'','id="oninstall"'):''}
+    </div>
+    <div class="set-row">
+      <div><div class="t">${esc(tf('set.who','目前是'))}</div><div class="s">${esc(S.user)}</div></div>
+      ${btn(tf('set.switch','換人'),'','id="logout"')}
+    </div>
+
+    <div class="set-row">
+      <div><div class="t">${esc(tf('set.version','版本'))}</div><div class="s">${esc(BUILD)}</div></div>
+      ${btn(tf('set.bust','清快取重載'),'','id="bust"')}
+    </div>
+
+    <div class="dormant">
+      <div class="t">${esc(t('archive.title'))}</div>
+      <div class="s" style="margin-top:6px">${esc(t('archive.body'))}</div>
+    </div>
+    <div class="row">${btn(tf('ui.close','關起來'),'','id="no"')}</div>`);
+
+  v.querySelector('#no').onclick=()=>v.remove();
+  const op=v.querySelector('#onpush');
+  if(op)op.onclick=async()=>{
+    op.disabled=true;v.querySelector('#ps').textContent='問一下瀏覽器…';
+    v.querySelector('#ps').textContent=await askPush();
+  };
+  const fg=v.querySelector('#fgsys');
+  if(fg)fg.onclick=()=>{
+    const on=localStorage.getItem(LS.fgSys)==='1';
+    if(on)localStorage.removeItem(LS.fgSys);else localStorage.setItem(LS.fgSys,'1');
+    fg.classList.toggle('on',!on);fg.textContent=on?tf('ui.off','關'):tf('ui.on','開');
+  };
+  const oi=v.querySelector('#oninstall');
+  if(oi)oi.onclick=async()=>{
+    if(!deferredInstall)return;
+    deferredInstall.prompt();await deferredInstall.userChoice;
+    deferredInstall=null;v.remove();
+  };
+  v.querySelector('#bust').onclick=async()=>{
+    // 把本地存的東西清掉再重載，用來確認拿到的是最新的檔案
+    try{localStorage.removeItem(CACHE);}catch(e){}
+    if('caches' in window){
+      try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));}catch(e){}
+    }
+    if('serviceWorker' in navigator){
+      try{const rs=await navigator.serviceWorker.getRegistrations();
+        await Promise.all(rs.map(r=>r.update()));}catch(e){}
+    }
+    location.reload(true);
+  };
+  v.querySelector('#logout').onclick=async()=>{
+    localStorage.removeItem(LS.token);localStorage.removeItem(CACHE);
+    if('caches' in window){try{await caches.delete('junou-photos-v1');}catch(e){}}
+    location.reload();
+  };
+}
+
+/* 第一次進來、還沒裝到主畫面時的邀請。只出現一次。 */
+function maybeInvite(){
+  if(isStandalone()||localStorage.getItem('jo.invited'))return;
+  if(!deferredInstall&&!isIOS())return;
+  localStorage.setItem('jo.invited','1');
+  setTimeout(()=>{
+    const v=panel(`<h3>放到主畫面上吧</h3>
+      <p class="note">這樣它就會有自己的位子，跟其他 app 一樣。
+      ${isIOS()?'按瀏覽器下面的分享鍵，往下選「加入主畫面」。':''}</p>
+      <div class="row">${btn(tf('ui.later','等一下再說'),'','id="no"')}${deferredInstall?btn('好','warm','id="yes"'):''}</div>`);
+    v.querySelector('#no').onclick=()=>v.remove();
+    const y=v.querySelector('#yes');
+    if(y)y.onclick=async()=>{deferredInstall.prompt();await deferredInstall.userChoice;
+      deferredInstall=null;v.remove();};
+  },1400);
+}
+
+/* ══════════════════════════════════════════
+   把主機商注入的浮動標記移掉
+   它會蓋住底部的分頁，讓最右邊兩個按不到。
+   ══════════════════════════════════════════ */
+function sweepBadges(){
+  const kill=()=>{
+    [].slice.call(document.body.children).forEach(el=>{
+      if(el.id==='app'||el.id==='ink-defs'||el.classList.contains('veil')
+        ||el.classList.contains('toast'))return;
+      const cs=getComputedStyle(el);
+      if(cs.position!=='fixed')return;
+      const txt=(el.textContent||'').toLowerCase();
+      const mark=(el.id+' '+el.className).toLowerCase();
+      if(txt.indexOf('netlify')>=0||mark.indexOf('netlify')>=0
+        ||el.tagName==='IFRAME'||el.tagName==='NETLIFY-BADGE'){
+        el.remove();
+      }
+    });
+  };
+  kill();
+  const mo=new MutationObserver(kill);
+  mo.observe(document.body,{childList:true});
+  setTimeout(()=>mo.disconnect(),60000);
+}
+
+/* ══════════════════════════════════════════
+   啟動
+   ══════════════════════════════════════════ */
+async function loadHut(){
+  S.hut=await api('hut',{});
+}
+
+async function refresh(){
+  const o=await api('open',{});
+  soakOpen(o);
+  if(S.tab==='hut'&&!S.hut)await loadHut();
+  render();
+}
+
+const CACHE='jo.cache.open';
+
+function soakOpen(o){
+  S.user=o.user;S.partner=o.partner;S.stamps=o.stamps;S.stampSets=o.stampSets;
+  S.copy=o.copy;S.settings=o.settings;S.view=o.month;S.pending=o.pending||[];
+  try{localStorage.setItem(CACHE,JSON.stringify(o));}catch(e){}
+}
+
+/** 上次開啟時存下來的東西。用來先把畫面畫出來，不用等後端。 */
+function driedOpen(){
+  try{
+    const raw=localStorage.getItem(CACHE);
+    if(!raw)return null;
+    const o=JSON.parse(raw);
+    return (o&&o.user&&o.copy&&o.month)?o:null;
+  }catch(e){return null;}
+}
+
+async function boot(){
+  // 先用上次的資料畫一次，畫面立刻就有東西。
+  // 後端回來之後再重畫一次，數字和照片才會是最新的。
+  const cold=driedOpen();
+  if(cold){
+    S.user=cold.user;S.partner=cold.partner;S.stamps=cold.stamps;S.stampSets=cold.stampSets;
+    S.copy=cold.copy;S.settings=cold.settings;S.view=cold.month;
+    S.pending=cold.pending||[];
+    render();
+  }
+  try{
+    await refresh();
+    initPush();
+    if(localStorage.getItem(LS.seen))maybeInvite();
+  }catch(e){
+    const msg=String(e.message||'');
+    if(msg.indexOf('unauthorized')>=0){
+      localStorage.removeItem(LS.token);S.token='';
+      localStorage.removeItem(CACHE);screenLogin('');
+    }else if(cold){
+      // 已經用快取畫出畫面了，連不上就先讓人看著舊的
+      toast('離線','連不上，你看到的是上次的樣子');
+    }else{
+      screenLogin(msg||'連不上，等一下再試');
+    }
+  }
+}
+
+/** 卡片上的 QR 會把登入碼放在網址後面，掃進來就直接進去，不用輸入。 */
+async function tokenFromLink(){
+  const raw=(location.hash||'').replace(/^#/,'').trim();
+  if(!raw||!/^[a-z0-9]{12,40}$/.test(raw))return false;
+  history.replaceState(null,'',location.pathname+location.search);
+  try{
+    const j=await post(S.url,{action:'login',code:raw});
+    if(!j.ok||!j.data)return false;
+    S.token=j.data.token;S.user=j.data.user;S.partner=j.data.partner;
+    localStorage.setItem(LS.token,S.token);
+    localStorage.removeItem(CACHE);
+    return true;
+  }catch(e){return false;}
+}
+
+(async function(){
+  washDefs();
+  if(document.readyState==='loading')
+    document.addEventListener('DOMContentLoaded',sweepBadges);
+  else sweepBadges();
+  if(!S.url){screenSetup();return;}
+  if(!S.token&&location.hash){
+    if(await tokenFromLink()){await boot();return;}
+  }
+  if(!S.token){screenLogin();return;}
+  boot();
+})();
+</script>
+</body>
+</html>

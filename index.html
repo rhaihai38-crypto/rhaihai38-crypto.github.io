@@ -80,6 +80,13 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 /* ── 頭 ── */
 .head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px}
 .head .ym{font-size:1.55rem;letter-spacing:.04em}
+.head .ymwrap{display:flex;align-items:baseline;gap:4px}
+.step{font-family:var(--ledger);font-size:1.05rem;color:var(--ink-faint);
+  padding:2px 7px;line-height:1.2}
+.step:not([disabled]){color:var(--ink-soft)}
+.step[disabled]{opacity:.28}
+.backnow{font-family:var(--ledger);font-size:.7rem;letter-spacing:.06em;
+  color:var(--ochre);padding:3px 0;margin-left:2px}
 .rule{height:14px;margin:14px 0 26px}
 .rule svg{width:100%;height:100%;overflow:visible}
 .rule path{fill:var(--ink);stroke:none;opacity:.42}
@@ -524,13 +531,13 @@ function vignette(kind){
    API
    ══════════════════════════════════════════ */
 /* 版本標記。設定面板最下面會顯示，用來確認手機上跑的是哪一版。 */
-const BUILD='2026-08-31d · 說出真正的原因';
+const BUILD='2026-09-02 · 可以翻月份了';
 
 const LS={url:'jo.url',token:'jo.token',seen:'jo.welcomed',fgSys:'jo.fgSystem'};
 const BAKED=(typeof API_URL!=='undefined'&&API_URL)?API_URL:'';
 const S={url:BAKED||localStorage.getItem(LS.url)||'',token:localStorage.getItem(LS.token)||'',
   user:'',partner:'',copy:{},settings:{},stamps:[],stampSets:{},pending:[],
-  view:null,tab:'month',imgCache:{},qfilter:''};
+  view:null,tab:'month',imgCache:{},qfilter:'',ym:null,months:[]};
 
 /**
  * 送一個請求出去，並且在回來的東西不是 JSON 時說清楚為什麼。
@@ -756,9 +763,20 @@ function frameHTML(kind,i,photo,opts){
     ${photo?'tabindex="0" role="button"':''}>${inner}</div>`;
 }
 
+/** 月份加減。回傳 yyyy-MM。 */
+function shiftYm(ym,d){
+  const p=ym.split('-'); const dt=new Date(Number(p[0]),Number(p[1])-1+d,1);
+  return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0');
+}
+
 function renderMonth(){
   const v=S.view,q=v.quota,c=v.counts;
   const {y,m}=monthLabel(v.yearMonth);
+  const list=(S.months&&S.months.length)?S.months:[v.yearMonth];
+  const earliest=list[0], nowYm=list[list.length-1];
+  const prevYm=(v.yearMonth>earliest)?shiftYm(v.yearMonth,-1):null;
+  const nextYm=(v.yearMonth<nowYm)?shiftYm(v.yearMonth,1):null;
+  const past=v.yearMonth!==nowYm;
   const selfSlots=[],usSlots=[];
   const meSlots=[];
   const pick=k=>v.mine.filter(p=>p.visibility==='shared'&&p.kind===k);
@@ -794,7 +812,12 @@ function renderMonth(){
   return `<div class="sheet">
     ${wash(300,210,'#D9A05B',0.13,'wash1')}
     <div class="head">
-      <h1 class="ym">${esc(y)} · ${esc(m)}</h1>
+      <div class="ymwrap">
+        <button class="step" id="prevm" ${prevYm?'':'disabled'}>‹</button>
+        <h1 class="ym">${esc(y)} · ${esc(m)}</h1>
+        <button class="step" id="nextm" ${nextYm?'':'disabled'}>›</button>
+        ${past?`<button class="backnow" id="nowm">回這個月</button>`:''}
+      </div>
       <button class="who-btn" id="settings">${esc(S.user)}</button>
     </div>
     <p class="cap sys" style="margin:0">${left>0?esc(t('home.quotaLeft',{n:left})):esc(t('home.quotaFull'))}</p>
@@ -1354,6 +1377,13 @@ function render(){
     render();
   });
   bindStamps(app);
+  const go=async ym=>{S.ym=ym;await refresh();};
+  const pm=app.querySelector('#prevm');
+  if(pm&&!pm.disabled)pm.onclick=()=>go(shiftYm(S.view.yearMonth,-1));
+  const nm=app.querySelector('#nextm');
+  if(nm&&!nm.disabled)nm.onclick=()=>go(shiftYm(S.view.yearMonth,1));
+  const nw=app.querySelector('#nowm');
+  if(nw)nw.onclick=()=>go(null);
   const sb=app.querySelector('#settings');if(sb)sb.onclick=()=>panelSettings();
   app.querySelectorAll('[data-door]').forEach(b=>
     b.onclick=()=>panelQuote(b.dataset.door,null));
@@ -1564,6 +1594,7 @@ async function send(v,willful,reason){
   if(err)err.innerHTML='<span class="spin"></span>';
   try{
     const r=await api('uploadPhoto',{
+      yearMonth:(S.view&&S.view.yearMonth)||undefined,
       kind:pick.kind,visibility:pick.priv?'private':'shared',
       caption:cap?cap.value:pick.caption||'',
       dataBase64:pick.b64,mimeType:pick.mime,
@@ -1925,7 +1956,7 @@ async function loadHut(){
 }
 
 async function refresh(){
-  const o=await api('open',{});
+  const o=await api('open',S.ym?{yearMonth:S.ym}:{});
   soakOpen(o);
   if(S.tab==='hut'&&!S.hut)await loadHut();
   render();
@@ -1936,6 +1967,7 @@ const CACHE='jo.cache.open';
 function soakOpen(o){
   S.user=o.user;S.partner=o.partner;S.stamps=o.stamps;S.stampSets=o.stampSets;
   S.copy=o.copy;S.settings=o.settings;S.view=o.month;S.pending=o.pending||[];
+  S.months=o.months||[];
   try{localStorage.setItem(CACHE,JSON.stringify(o));}catch(e){}
 }
 
@@ -1956,7 +1988,7 @@ async function boot(){
   if(cold){
     S.user=cold.user;S.partner=cold.partner;S.stamps=cold.stamps;S.stampSets=cold.stampSets;
     S.copy=cold.copy;S.settings=cold.settings;S.view=cold.month;
-    S.pending=cold.pending||[];
+    S.pending=cold.pending||[];S.months=cold.months||[];
     render();
   }
   try{

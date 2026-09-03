@@ -295,6 +295,35 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 .vig-wrap{display:flex;align-items:flex-end;gap:16px;margin-top:8px}
 .vig-wrap .cap{margin:0}
 
+/* ── 回頭看 ── */
+.lookbtn{position:relative;display:inline-flex;align-items:center;gap:6px;
+  padding:5px 0;margin-top:2px;font-size:.92rem;color:var(--ink-soft)}
+.lookbtn span{border-bottom:1.4px solid var(--ochre);padding-bottom:2px}
+.lookbtn em{font-style:normal;font-family:var(--ledger);font-size:.66rem;
+  color:#8E5F1E;background:rgba(201,138,60,.18);border-radius:999px;padding:1px 7px}
+.mrow{position:relative;display:flex;align-items:center;gap:12px;padding:14px 2px;
+  width:100%;text-align:left}
+.mrow+.mrow{border-top:1px solid rgba(43,39,36,.09)}
+.mrow .mm{font-size:1.06rem;min-width:5.4em}
+.mrow .cnt{font-family:var(--ledger);font-size:.72rem;color:var(--ink-soft);
+  display:flex;gap:10px}
+.mrow .lock{margin-left:auto;font-size:.8rem;color:var(--blue);opacity:.85}
+.mrow .go{margin-left:auto;color:var(--ink-faint)}
+.mrow.dim{opacity:.55}
+.mrow .dot{width:6px;height:6px;border-radius:50%;background:var(--ochre);
+  position:absolute;left:-9px;top:50%;margin-top:-3px}
+
+/* ── 揭曉的那一刻 ── */
+.rv{text-align:center;padding:8px 0 4px}
+.rv .m{font-size:1.9rem;line-height:1.5;letter-spacing:.04em}
+.rv .b{font-size:1rem;color:var(--ink-soft);margin-top:6px;line-height:1.8}
+.rv .art{margin:14px auto 6px;width:110px}
+.rv .art svg{width:100%;height:auto}
+.rv .art path{fill:var(--ink-faint)}
+.grid.reveal .frame{opacity:0;animation:rise2 .7s ease forwards}
+@keyframes rise2{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.grid.reveal .frame{animation:none;opacity:1}}
+
 /* ── 前景通知 ── */
 .toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 12px);
   transform:translateX(-50%);width:min(440px,calc(100% - 24px));z-index:2147483647;
@@ -531,13 +560,13 @@ function vignette(kind){
    API
    ══════════════════════════════════════════ */
 /* 版本標記。設定面板最下面會顯示，用來確認手機上跑的是哪一版。 */
-const BUILD='2026-09-02 · 可以翻月份了';
+const BUILD='2026-09-03 · 對方的照片也分類';
 
 const LS={url:'jo.url',token:'jo.token',seen:'jo.welcomed',fgSys:'jo.fgSystem'};
 const BAKED=(typeof API_URL!=='undefined'&&API_URL)?API_URL:'';
 const S={url:BAKED||localStorage.getItem(LS.url)||'',token:localStorage.getItem(LS.token)||'',
   user:'',partner:'',copy:{},settings:{},stamps:[],stampSets:{},pending:[],
-  view:null,tab:'month',imgCache:{},qfilter:'',ym:null,months:[]};
+  view:null,tab:'month',imgCache:{},qfilter:'',ym:null,months:[],unseen:[],justRevealed:null};
 
 /**
  * 送一個請求出去，並且在回來的東西不是 JSON 時說清楚為什麼。
@@ -758,7 +787,8 @@ function frameHTML(kind,i,photo,opts){
       : o.willful?`<div class="slot"><em>＋</em>${esc(t('willful.confirm'))}</div>`
       : `<div class="slot">＋</div>`);
   const addable=!photo&&!o.covered&&!o.readonly;
-  return `<div class="${cls}" data-seed="${seed}" data-kind="${kind}"
+  const delay=(o.delay!==undefined)?` style="animation-delay:${(o.delay*0.09).toFixed(2)}s"`:'';
+  return `<div class="${cls}" data-seed="${seed}" data-kind="${kind}"${delay}
     ${addable?`data-add="${kind}" tabindex="0" role="button"`:''}
     ${photo?'tabindex="0" role="button"':''}>${inner}</div>`;
 }
@@ -793,10 +823,24 @@ function renderMonth(){
   let opposite='';
   if(v.revealed){
     const them=v.theirs;
-    opposite=them.length
-      ? `<div class="grid self${q.self>=7?' dense':''}">${them.map((p,i)=>frameHTML('self',i,p,{ns:'t',readonly:true})).join('')}</div>
-         <p class="cap">${esc(t('reveal.done'))}</p>`
-      : `<div class="vig-wrap">${vignette('stones')}<p class="cap">${esc(t('reveal.quiet'))}</p></div>`;
+    if(them.length){
+      // 對方的照片也要照分類分開，不能三種倒在同一個網格裡
+      let d=0;
+      const groups=['self','us','me'].map(k=>{
+        const list=them.filter(p=>(p.kind||'self')===k);
+        if(!list.length)return '';
+        const cls=(k==='self')?('grid self'+(q.self>=7?' dense':'')):('grid '+k);
+        const rv=(S.justRevealed===v.yearMonth)?' reveal':'';
+        const cells=list.map((p,i)=>frameHTML(k,i,p,{ns:'t'+k,readonly:true,delay:d++})).join('');
+        return `<div class="group-head" style="margin-top:16px">
+            <h2 style="font-size:1rem">${esc(t('home.'+k))}</h2>
+            <span class="led">${list.length}</span></div>
+          <div class="${cls}${rv}">${cells}</div>`;
+      }).join('');
+      opposite=groups+`<p class="cap">${esc(t('reveal.done'))}</p>`;
+    }else{
+      opposite=`<div class="vig-wrap">${vignette('stones')}<p class="cap">${esc(t('reveal.quiet'))}</p></div>`;
+    }
   }else{
     const n=v.partnerPending;
     const d=new Date(v.revealAt);
@@ -821,6 +865,8 @@ function renderMonth(){
       <button class="who-btn" id="settings">${esc(S.user)}</button>
     </div>
     <p class="cap sys" style="margin:0">${left>0?esc(t('home.quotaLeft',{n:left})):esc(t('home.quotaFull'))}</p>
+    <button class="lookbtn" id="look"><span>${esc(t('look.btn'))}</span>${
+      (S.unseen&&S.unseen.length)?`<em>${S.unseen.length}</em>`:''}</button>
 
     <div class="rule" id="r1"></div>
 
@@ -1342,6 +1388,62 @@ async function loadJar(){
 }
 
 /* ══════════════════════════════════════════
+   回頭看
+   ══════════════════════════════════════════ */
+async function panelLook(){
+  const v=panel(`<h3>${esc(t('look.title'))}</h3>
+    <div id="mlist"><p class="cap sys"><span class="spin"></span></p></div>
+    <div class="row">${btn(tf('ui.close','關起來'),'','id="no"')}</div>`);
+  v.querySelector('#no').onclick=()=>v.remove();
+  let rows=[];
+  try{ rows=await api('archive',{}); }
+  catch(e){ v.querySelector('#mlist').innerHTML='<p class="cap sys">'+esc(e.message)+'</p>'; return; }
+
+  const unseen={}; (S.unseen||[]).forEach(u=>unseen[u.ym]=1);
+  v.querySelector('#mlist').innerHTML = rows.map(r=>{
+    const {y,m}=monthLabel(r.ym);
+    const total=r.mine+r.theirs;
+    const right = r.revealed
+      ? `<span class="go">›</span>`
+      : `<span class="lock">${esc(t('look.locked'))}${r.pending?`　${r.pending}`:''}</span>`;
+    const cnt = total
+      ? `<span class="cnt"><span>${esc(t('look.mine',{n:r.mine}))}</span>
+           <span>${esc(t('look.theirs',{who:S.partner,n:r.theirs}))}</span></span>`
+      : `<span class="cnt">${esc(t('look.empty'))}</span>`;
+    return `<button class="mrow ${total?'':'dim'}" data-ym="${esc(r.ym)}">
+      ${unseen[r.ym]?'<span class="dot"></span>':''}
+      <span class="mm">${esc(y)} · ${esc(m)}</span>${cnt}${right}</button>`;
+  }).join('');
+
+  v.querySelectorAll('[data-ym]').forEach(b=>b.onclick=async()=>{
+    v.remove(); S.ym=b.dataset.ym; await refresh();
+  });
+}
+
+/* ══════════════════════════════════════════
+   揭曉的那一刻
+   ══════════════════════════════════════════ */
+function panelReveal(item){
+  const {y,m}=monthLabel(item.ym);
+  const v=panel(`<div class="rv">
+      <div class="m">${esc(t('reveal.now.title',{m:y+' · '+m}))}</div>
+      <div class="b">${esc(t('reveal.now.body',{who:item.who,n:item.n}))}</div>
+      <div class="art">${vignette('boat')}</div>
+    </div>
+    <div class="row">${btn(t('reveal.now.later'),'','id="no"')}${btn(t('reveal.now.open'),'warm','id="ok"')}</div>`);
+  v.querySelector('#no').onclick=()=>v.remove();
+  v.querySelector('#ok').onclick=async()=>{
+    const ok=v.querySelector('#ok');ok.disabled=true;
+    try{ await api('markSeen',{yearMonth:item.ym}); }catch(e){}
+    S.unseen=(S.unseen||[]).filter(x=>x.ym!==item.ym);
+    v.remove();
+    S.ym=item.ym; S.justRevealed=item.ym;
+    await refresh();
+    setTimeout(()=>{S.justRevealed=null;},1600);
+  };
+}
+
+/* ══════════════════════════════════════════
    繪製主體
    ══════════════════════════════════════════ */
 function nav(){
@@ -1384,6 +1486,7 @@ function render(){
   if(nm&&!nm.disabled)nm.onclick=()=>go(shiftYm(S.view.yearMonth,1));
   const nw=app.querySelector('#nowm');
   if(nw)nw.onclick=()=>go(null);
+  const lk=app.querySelector('#look');if(lk)lk.onclick=()=>panelLook();
   const sb=app.querySelector('#settings');if(sb)sb.onclick=()=>panelSettings();
   app.querySelectorAll('[data-door]').forEach(b=>
     b.onclick=()=>panelQuote(b.dataset.door,null));
@@ -1967,7 +2070,7 @@ const CACHE='jo.cache.open';
 function soakOpen(o){
   S.user=o.user;S.partner=o.partner;S.stamps=o.stamps;S.stampSets=o.stampSets;
   S.copy=o.copy;S.settings=o.settings;S.view=o.month;S.pending=o.pending||[];
-  S.months=o.months||[];
+  S.months=o.months||[];S.unseen=o.unseen||[];
   try{localStorage.setItem(CACHE,JSON.stringify(o));}catch(e){}
 }
 
@@ -1988,13 +2091,19 @@ async function boot(){
   if(cold){
     S.user=cold.user;S.partner=cold.partner;S.stamps=cold.stamps;S.stampSets=cold.stampSets;
     S.copy=cold.copy;S.settings=cold.settings;S.view=cold.month;
-    S.pending=cold.pending||[];S.months=cold.months||[];
+    S.pending=cold.pending||[];S.months=cold.months||[];S.unseen=cold.unseen||[];
     render();
   }
   try{
     await refresh();
     initPush();
-    if(localStorage.getItem(LS.seen))maybeInvite();
+    if(localStorage.getItem(LS.seen)){
+      if(S.unseen&&S.unseen.length){
+        setTimeout(()=>panelReveal(S.unseen[S.unseen.length-1]),700);
+      }else{
+        maybeInvite();
+      }
+    }
   }catch(e){
     const msg=String(e.message||'');
     if(msg.indexOf('unauthorized')>=0){

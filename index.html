@@ -196,6 +196,18 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 .q .meta{margin-top:7px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
 .q .who{font-family:var(--ledger);font-size:.7rem;letter-spacing:.05em;color:var(--ink-faint)}
 .q .src{font-size:.88rem;color:var(--ink-soft)}
+/* ── 內文裡的網址 ── */
+.q .txt a.ln{color:#A26A22;text-decoration:none;
+  border-bottom:1.4px solid rgba(201,138,60,.5);
+  font-family:var(--ledger);font-size:.88em;
+  word-break:break-all;padding-bottom:1px}
+.q .txt a.ln:active{border-bottom-color:var(--ochre)}
+/* ── 內文下方長出來的連結按鈕 ── */
+.q .links{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}
+.btn.link{padding:7px 15px;min-height:0;max-width:100%;text-decoration:none}
+.btn.link span{font-family:var(--ledger);font-size:.78rem;letter-spacing:.02em;
+  color:#A26A22;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn.link path{fill:var(--ochre);opacity:.75}
 .stamps{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}
 .st{padding:4px 11px;border:1.2px solid rgba(43,39,36,.16);border-radius:999px;
   font-size:.78rem;color:var(--ink-faint);line-height:1.5}
@@ -560,7 +572,7 @@ function vignette(kind){
    API
    ══════════════════════════════════════════ */
 /* 版本標記。設定面板最下面會顯示，用來確認手機上跑的是哪一版。 */
-const BUILD='2026-09-03 · 對方的照片也分類';
+const BUILD='2026-09-10 · 貼網址會變成連結';
 
 const LS={url:'jo.url',token:'jo.token',seen:'jo.welcomed',fgSys:'jo.fgSystem'};
 const BAKED=(typeof API_URL!=='undefined'&&API_URL)?API_URL:'';
@@ -634,6 +646,103 @@ function t(key,vars){
   return s;
 }
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ══════════════════════════════════════════
+   網址
+
+   試算表裡存的永遠是純文字，這裡只是「讀的時候看起來像連結」。
+   十年後打開試算表，看到的還是你當初貼的那一串。
+
+   只認 http/https 開頭的，所以 javascript: 之類的東西進不來。
+   一定要在跳脫「之前」切開，不然 & 已經變成 &amp;，網址會被剪斷。
+   ══════════════════════════════════════════ */
+/* 網址不吃全形標點。
+   「https://news.com/文章。真的很棒」如果只用 [^\s]，句號後面整串都會被當成網址。
+   漢字本身留著 —— 有些網址真的長那樣，砍掉會變成指到別的頁面，那比連不到更糟。 */
+const URL_RE=/https?:\/\/[^\s\u3000-\u303F\uFF00-\uFFEF]+/g;
+
+/** 把黏在網址尾巴的標點還給句子 */
+function trimUrl(u){
+  let s=u.replace(/[.,;:!?'"`、。，；：！？…～]+$/,'');
+  const PAIR={')':'(',']':'[','}':'{','）':'（','】':'【','》':'《','」':'「','』':'『'};
+  while(s.length){
+    const last=s.slice(-1),open=PAIR[last];
+    if(!open)break;
+    // 網址裡本來就有成對括號的（維基百科那種）要留著
+    const opens=s.split(open).length-1,closes=s.split(last).length-1;
+    if(closes>opens)s=s.slice(0,-1);else break;
+  }
+  return s;
+}
+
+/** 內文裡顯示的短版：網域＋一小截路徑 */
+function shortUrl(u,max){
+  const cut=max||18;
+  try{
+    const x=new URL(u);
+    const host=x.hostname.replace(/^www\./,'');
+    let tail=(x.pathname||'').replace(/\/+$/,'')+(x.search||'');
+    try{tail=decodeURIComponent(tail);}catch(e){}
+    if(tail.length>cut)tail=tail.slice(0,cut-1)+'…';
+    return host+tail;
+  }catch(e){
+    return u.length>cut+12?u.slice(0,cut+11)+'…':u;
+  }
+}
+
+/**
+ * 按鈕上只放網域。
+ * 內文已經有一次短網址了，按鈕再放一次會像同一句話講兩遍 ——
+ * 按鈕要回答的是「這會把我帶去哪裡」，不是「網址長什麼樣」。
+ */
+function urlHost(u){
+  try{ return new URL(u).hostname.replace(/^www\./,''); }
+  catch(e){ return shortUrl(u,10); }
+}
+
+/** 一段文字裡所有的網址，去重，照出現順序 */
+function urlsIn(text){
+  const out=[],seen={};
+  URL_RE.lastIndex=0;
+  let m;
+  while((m=URL_RE.exec(String(text||'')))){
+    const u=trimUrl(m[0]);
+    if(u&&!seen[u]){seen[u]=1;out.push(u);}
+  }
+  return out;
+}
+
+/** 內文：網址就地變成可點的，其餘照舊跳脫 */
+function richText(text){
+  const s=String(text==null?'':text);
+  let out='',last=0,m;
+  URL_RE.lastIndex=0;
+  while((m=URL_RE.exec(s))){
+    const u=trimUrl(m[0]);
+    if(!u){continue;}
+    out+=esc(s.slice(last,m.index));
+    out+=`<a class="ln" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(shortUrl(u))}</a>`;
+    last=m.index+u.length;
+  }
+  out+=esc(s.slice(last));
+  return out;
+}
+
+/** 內文下面長出來的那一排按鈕 */
+function linkRow(text){
+  const list=urlsIn(text);
+  if(!list.length)return '';
+  // 同一則裡有兩個同網域的連結，光看網域分不出來，那就補上路徑
+  const seen={};
+  list.forEach(u=>{const h=urlHost(u);seen[h]=(seen[h]||0)+1;});
+  return `<div class="links">${list.map(u=>{
+    const h=urlHost(u);
+    const label=seen[h]>1?shortUrl(u,14):h;
+    return `<a class="btn link" href="${esc(u)}" target="_blank" rel="noopener noreferrer">
+      <svg preserveAspectRatio="none"></svg>
+      <span>${esc(label)}</span></a>`;
+  }).join('')}</div>`;
+}
 
 /* ══════════════════════════════════════════
    零件
@@ -995,7 +1104,8 @@ function renderQuote(){
       <div class="lab">${esc(t('quote.label.'+(q.kind||'quote')))}</div>
       ${q.prompt?`<div class="q-tag">${esc(q.prompt)}${q.askedBy?
         `　<span style="color:var(--blue)">${esc(t('quote.askedBy',{who:q.askedBy}))}</span>`:''}</div>`:''}
-      <div class="txt">${esc(q.text)}</div>
+      <div class="txt">${richText(q.text)}</div>
+      ${linkRow(q.text)}
       <div class="meta">
         <span class="who">${esc(q.owner)}記下</span>
         ${q.source?`<span class="src">— ${esc(q.source)}</span>`:''}
@@ -1321,7 +1431,7 @@ function jarSVG(count,capacity,seed,w){
 }
 
 function renderJar(){
-  const j=S.jar||{marbles:0,capacity:10,jarIndex:1,storedJarList:[],myUnusedWishes:0};
+  const j=S.jar||{marbles:0,capacity:5,jarIndex:1,storedJarList:[],myUnusedWishes:0};
   const stored=(j.storedJarList||[]).map(x=>`
     <div class="mini">${jarSVG(j.capacity,j.capacity,900+x.jarIndex,84)}
       <div class="w">${esc(x.wish||'—')}</div></div>`).join('');

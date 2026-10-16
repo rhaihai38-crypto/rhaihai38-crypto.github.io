@@ -62,6 +62,8 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 .field svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
 .field path{fill:var(--ink-faint);stroke:none}
 .field:focus-within path{fill:var(--ochre)}
+/* 聚焦時底線已經會變色，瀏覽器自己的外框是多的 */
+.field input:focus,.field textarea:focus{outline:none}
 ::placeholder{color:var(--ink-faint);opacity:1}
 
 /* ── 按鈕 ── */
@@ -277,6 +279,31 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 .cb.del{color:#A3502A}
 .cmove{width:100%;padding:2px 0 10px}
 .pdanger{margin-top:26px;padding-top:14px;border-top:1px dashed rgba(0,0,0,.14)}
+/* 誰放的。顏色照名字排序固定，兩支手機上看起來一樣 */
+.wtag{display:inline-block;font-family:var(--ledger);font-size:.66rem;letter-spacing:.05em;
+  padding:1px 7px;border-radius:999px;line-height:1.6;white-space:nowrap}
+.wtag.w0{color:#8E5F1E;background:rgba(201,138,60,.16)}
+.wtag.w1{color:#4F6B7A;background:rgba(122,147,163,.18)}
+.wtag.onphoto{position:absolute;left:8px;bottom:8px;z-index:3;font-size:.6rem;padding:0 6px}
+.wtag.onphoto.w0{background:rgba(250,240,222,.92)}
+.wtag.onphoto.w1{background:rgba(232,240,245,.92)}
+.wdot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.wdot.w0{background:var(--ochre)}
+.wdot.w1{background:var(--blue)}
+.pmark{position:absolute;right:8px;bottom:8px;z-index:3;font-family:var(--ledger);font-size:.62rem;
+  color:var(--ink-soft);background:rgba(250,246,236,.92);padding:0 6px;border-radius:999px;line-height:1.6}
+.pmark b{font-weight:normal;margin-left:3px}
+.pmeta{display:flex;align-items:center;gap:10px;margin-top:12px}
+.pcap{margin-top:8px;white-space:pre-wrap}
+.capsave{margin-top:6px}
+.cmts{margin-top:6px}
+.cmt{display:flex;align-items:baseline;gap:8px;padding:9px 0;border-bottom:1px dashed rgba(0,0,0,.1);flex-wrap:wrap}
+.cmt .ct{flex:1;min-width:60%;font-size:.95rem;line-height:1.7;white-space:pre-wrap}
+.cmt .ct a.ln{color:#A26A22;border-bottom:1.4px solid rgba(201,138,60,.5);text-decoration:none;word-break:break-all}
+.cmt .cd{font-family:var(--ledger);font-size:.62rem;color:var(--ink-faint)}
+.cmt-new{display:flex;align-items:flex-end;gap:8px;margin-top:6px}
+.cmt-new .field{flex:1}
+.qacts{display:flex;gap:9px;flex-wrap:wrap;margin-top:8px}
 .door{position:relative;text-align:left;padding:15px 18px;min-height:0}
 .door span{position:relative;z-index:1;font-size:1rem}
 .door svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
@@ -631,14 +658,14 @@ function vignette(kind){
    API
    ══════════════════════════════════════════ */
 /* 版本標記。設定面板最下面會顯示，用來確認手機上跑的是哪一版。 */
-const BUILD='2026-10-15 · 獨立專案';
+const BUILD='2026-10-16 · 照片留言';
 
 const LS={url:'jo.url',token:'jo.token',seen:'jo.welcomed',fgSys:'jo.fgSystem'};
 const BAKED=(typeof API_URL!=='undefined'&&API_URL)?API_URL:'';
 const S={url:BAKED||localStorage.getItem(LS.url)||'',token:localStorage.getItem(LS.token)||'',
   user:'',partner:'',copy:{},settings:{},stamps:[],stampSets:{},pending:[],
   view:null,tab:'month',imgCache:{},qfilter:'',ym:null,months:[],unseen:[],justRevealed:null,
-  qopen:{},projects:[],pid:null,proj:null,pcat:'',ncat:'',thumbCache:{}};
+  qopen:{},projects:[],pid:null,proj:null,pcat:'',ncat:'',pwho:'',thumbCache:{}};
 
 /**
  * 送一個請求出去，並且在回來的東西不是 JSON 時說清楚為什麼。
@@ -2066,9 +2093,13 @@ function catName(list,id){const c=(list||[]).filter(x=>x.id===id)[0];return c?c.
 function pDate(s){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||'');return m?`${+m[2]}/${+m[3]}`:'';}
 function pRange(p){const a=pDate(p.startDate),b=pDate(p.endDate);return a&&b?`${a} – ${b}`:(a||b);}
 function newCatId(){return 'c'+Math.random().toString(36).slice(2,12);}
+/** 兩個人照名字排序，顏色固定 —— 不管在誰的手機上看，均均都是同一個顏色 */
+function whoIdx(name){return [S.user,S.partner].sort().indexOf(name)===0?0:1;}
+function whoTag(name,extra){return `<span class="wtag w${whoIdx(name)} ${extra||''}">${esc(name)}</span>`;}
+function commentsFor(id){return ((S.proj&&S.proj.comments)||[]).filter(c=>c.targetId===id);}
 
 async function openProject(id){
-  S.tab='proj';S.pid=id;S.proj=null;S.pcat='';S.ncat='';
+  S.tab='proj';S.pid=id;S.proj=null;S.pcat='';S.ncat='';S.pwho='';
   window.scrollTo(0,0);
   render();
   try{S.proj=await api('projectView',{id});}
@@ -2097,7 +2128,8 @@ function renderProject(){
   const pc=visCats(P.photoCats),nc=visCats(P.noteCats);
   const pOk={},nOk={};pc.forEach(c=>pOk[c.id]=1);nc.forEach(c=>nOk[c.id]=1);
   // 藏起來的分類，裡面的東西也一起藏。資料還在，取消隱藏就回來
-  const shownP=photos.filter(p=>pOk[p.projectCat])
+  const allP=photos.filter(p=>pOk[p.projectCat]);
+  const shownP=allP.filter(p=>!S.pwho||p.owner===S.pwho)
     .sort((a,b)=>String(a.takenAt).localeCompare(String(b.takenAt))||String(a.createdAt).localeCompare(String(b.createdAt)));
   const shownN=notes.filter(q=>nOk[q.projectCat])
     .sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
@@ -2107,7 +2139,17 @@ function renderProject(){
     if(S.pcat&&!pOk[S.pcat])S.pcat='';
     const cnt=id=>shownP.filter(p=>p.projectCat===id).length;
     const chip=(id,label,n)=>`<button class="chip ${S.pcat===id?'on':''}" data-pc="${esc(id)}">${esc(label)}<span class="n">${n}</span></button>`;
-    const tile=p=>`<div class="ptile" data-ppid="${esc(p.id)}" data-seed="${hash(p.id)%9973}" role="button" tabindex="0"><img data-tid="${esc(p.id)}" alt=""></div>`;
+    const nC={};((S.proj&&S.proj.comments)||[]).forEach(c=>nC[c.targetId]=(nC[c.targetId]||0)+1);
+    // 左下角是誰放的；右下角有記號，表示點開有字可以看
+    const tile=p=>{
+      const mark=(p.caption||nC[p.id])?`<span class="pmark">${p.caption?'✎':''}${nC[p.id]?`<b>${nC[p.id]}</b>`:''}</span>`:'';
+      return `<div class="ptile" data-ppid="${esc(p.id)}" data-seed="${hash(p.id)%9973}" role="button" tabindex="0"><img data-tid="${esc(p.id)}" alt="">${whoTag(p.owner,'onphoto')}${mark}</div>`;
+    };
+    const people=[S.user,S.partner].sort();
+    const wcnt=w=>allP.filter(p=>p.owner===w).length;
+    const wchip=(w,label,n)=>`<button class="chip ${S.pwho===w?'on':''}" data-pw="${esc(w)}">${label}<span class="n">${n}</span></button>`;
+    const whoRow=allP.length?`<div class="filters">${wchip('',esc(PT('both','兩個人')),allP.length)}${
+      people.map(w=>wchip(w,`<i class="wdot w${whoIdx(w)}"></i>${esc(w)}`,wcnt(w))).join('')}</div>`:'';
     const groups=(S.pcat?pc.filter(c=>c.id===S.pcat):pc).map(c=>{
       const i=pc.indexOf(c);
       const ps=shownP.filter(p=>p.projectCat===c.id);
@@ -2120,8 +2162,10 @@ function renderProject(){
     photoSec=`<section class="psec">
       <div class="psec-h"><h2>${esc(PT('photos','照片'))}</h2>${btn(PT('addPhotos','＋ 放照片'),'warm small','id="padd"')}</div>
       ${queueBar()}
-      ${shownP.length?`<div class="filters">${chip('',PT('all','全部'),shownP.length)}${pc.map(c=>chip(c.id,c.name,cnt(c.id))).join('')}</div>`:''}
-      ${shownP.length?groups:`<p class="cap sys">${esc(PT('noPhotos','還沒有照片'))}</p>`}
+      ${whoRow}
+      ${allP.length?`<div class="filters">${chip('',PT('all','全部'),shownP.length)}${pc.map(c=>chip(c.id,c.name,cnt(c.id))).join('')}</div>`:''}
+      ${!allP.length?`<p class="cap sys">${esc(PT('noPhotos','還沒有照片'))}</p>`
+        :(groups.trim()?groups:`<p class="cap sys">${esc(PT('noMatch','這裡沒有照片'))}</p>`)}
     </section>`;
   }
 
@@ -2178,6 +2222,9 @@ function bindProject(app){
   });
   watchThumbs(app);
   app.querySelectorAll('[data-pc]').forEach(b=>b.onclick=()=>{S.pcat=b.dataset.pc;render();});
+  app.querySelectorAll('[data-pw]').forEach(b=>b.onclick=()=>{S.pwho=b.dataset.pw;render();});
+  const qw=app.querySelector('#qwalk');if(qw)qw.onclick=()=>panelWalk(Q.mine.slice(),0);
+  const qd=app.querySelector('#qdone');if(qd)qd.onclick=()=>{Q.total=0;Q.mine=[];render();};
   app.querySelectorAll('[data-nc]').forEach(b=>b.onclick=()=>{S.ncat=b.dataset.nc;render();});
   const pe=app.querySelector('#pedit');if(pe)pe.onclick=()=>panelProjectEdit(S.proj.project);
   const pa=app.querySelector('#padd');if(pa)pa.onclick=()=>panelProjectUpload();
@@ -2336,7 +2383,7 @@ function prepare(file){
 }
 
 /* ── 上傳佇列 ── */
-const Q={items:[],running:0,done:0,fail:[],total:0,pid:null};
+const Q={items:[],running:0,done:0,fail:[],total:0,pid:null,mine:[]};
 let qTick=0,wakeLock=null;
 
 function queueBar(){
@@ -2346,10 +2393,12 @@ function queueBar(){
     <p class="cap sys">${esc(PT('uploading','上傳中 {done} / {total}　請不要關掉 app',{done:Q.done,total:Q.total}))}</p></div>`;
   if(Q.fail.length)return `<div class="pqueue"><p class="cap sys">${esc(PT('failed','有 {n} 張沒傳上去',{n:Q.fail.length}))}</p>
     ${btn(PT('retry','再試一次'),'small','id="qretry"')}</div>`;
+  if(Q.mine.length)return `<div class="pqueue"><p class="cap sys">${esc(PT('uploaded','傳好 {n} 張',{n:Q.mine.length}))}</p>
+    <div class="qacts">${btn(PT('walk','一張一張補幾句'),'warm small','id="qwalk"')}${btn(PT('walkNo','不用了'),'small','id="qdone"')}</div></div>`;
   return '';
 }
 function enqueue(files,cat){
-  if(Q.pid!==S.pid||Q.done+Q.fail.length>=Q.total){Q.items=[];Q.done=0;Q.fail=[];Q.total=0;}
+  if(Q.pid!==S.pid||Q.done+Q.fail.length>=Q.total){Q.items=[];Q.done=0;Q.fail=[];Q.total=0;Q.mine=[];}
   Q.pid=S.pid;
   files.forEach(f=>Q.items.push({file:f,cat,pid:S.pid,tries:0}));
   Q.total+=files.length;
@@ -2388,6 +2437,7 @@ async function sendOne(it){
   const store=await photoStore();
   if(store){try{await store.put('/thumb/'+r.photo.id,new Response(u));}catch(e){}}
   if(S.proj&&S.proj.project&&S.proj.project.id===it.pid)S.proj.photos.push(r.photo);
+  Q.mine.push(r.photo.id);
 }
 /** 進度條就地更新；每十二張、還有全部傳完時，才整頁重畫 */
 function softRender(end){
@@ -2433,48 +2483,99 @@ function panelProjectUpload(){
   };
 }
 
-/* ── 面板：看一張照片 ── */
+/* ── 面板：看一張照片 ──
+   說明只有放照片的人能寫，點開就是輸入框，不用先按「改」。
+   底下是留言，兩個人都可以寫，像一段對話。 */
 function panelProjectPhoto(id){
   const P=S.proj.project,p=S.proj.photos.filter(x=>x.id===id)[0];if(!p)return;
   const mine=p.owner===S.user,cats=visCats(P.photoCats);
-  let cat=p.projectCat;
+  let cat=p.projectCat,dirty=false;
   const isCover=P.coverPhotoId===id;
   const v=panel(`<img class="preview" id="pv" src="${S.thumbCache[id]||''}" alt="">
-    <div id="view">
-      <p class="cap sys" style="margin-top:0">${esc([catName(P.photoCats,p.projectCat),pDate(p.takenAt),p.owner].filter(Boolean).join('　'))}</p>
-      ${p.caption?`<p class="cap" style="margin-top:6px">${esc(p.caption)}</p>`:''}
-      <div class="pacts">
-        ${mine?`<button class="btn plain" id="toedit"><span>${esc(t('edit.title'))}</span></button>`:''}
-        ${isCover?`<span class="cap sys" style="margin:0">${esc(PT('isCover','這張是封面'))}</span>`
-          :`<button class="btn plain" id="cover"><span>${esc(PT('setCover','設成封面'))}</span></button>`}
-      </div>
-    </div>
-    <div id="editbox" class="hide">
-      <div class="field"><textarea id="cap" rows="2" placeholder="${esc(PT('captionHint','說點什麼（可以不寫）'))}">${esc(p.caption)}</textarea></div>
-      <p class="cap sys" style="margin:10px 0 0">${esc(PT('moveCat','換分類'))}</p>
-      <div class="choices">${cats.map(c=>`<button class="chip ${c.id===cat?'on':''}" data-uc="${esc(c.id)}">${esc(c.name)}</button>`).join('')}</div>
-      <div style="margin-top:16px"><button class="btn plain" id="del"><span style="color:#A3502A">${esc(t('delete'))}</span></button></div>
-    </div>
+    <p class="cap sys pmeta">${whoTag(p.owner)}<span>${esc([catName(P.photoCats,p.projectCat),pDate(p.takenAt)].filter(Boolean).join('　'))}</span></p>
+    ${mine?`<div class="field"><textarea id="cap" rows="2" placeholder="${esc(PT('captionHint','寫一點這張的事'))}">${esc(p.caption)}</textarea></div>
+      <div class="capsave hide" id="capsave">${btn(tf('ui.save','存好'),'warm small','id="capok"')}</div>`
+      :(p.caption?`<p class="cap pcap">${esc(p.caption)}</p>`:'')}
     ${stampRow('photo',p)}
+    <p class="plabel">${esc(PT('replies','留言'))}</p>
+    <div class="cmts" id="cmts"></div>
+    <div class="cmt-new"><div class="field"><textarea id="cm" rows="1" placeholder="${esc(PT('replyHint','回一句'))}"></textarea></div>
+      ${btn(PT('send','送出'),'small','id="cms"')}</div>
     <div class="err" id="e"></div>
-    <div class="row">${btn(tf('ui.close','關起來'),'','id="no"')}${mine?btn(tf('ui.save','存好'),'warm hide','id="ok"'):''}</div>`);
+    <div class="pacts">
+      ${isCover?`<span class="cap sys" style="margin:0">${esc(PT('isCover','這張是封面'))}</span>`
+        :`<button class="btn plain" id="cover"><span>${esc(PT('setCover','設成封面'))}</span></button>`}
+      ${mine?`<button class="btn plain" id="more"><span>${esc(PT('more','換分類・刪除'))}</span></button>`:''}
+    </div>
+    ${mine?`<div id="morebox" class="hide">
+      <div class="choices">${cats.map(c=>`<button class="chip ${c.id===cat?'on':''}" data-uc="${esc(c.id)}">${esc(c.name)}</button>`).join('')}</div>
+      <div class="pacts"><button class="btn plain" id="del"><span style="color:#A3502A">${esc(t('delete'))}</span></button></div>
+    </div>`:''}
+    <div class="row">${btn(tf('ui.close','關起來'),'','id="no"')}</div>`);
+  const E=v.querySelector('#e');
+  // 關起來時，如果有改過東西，牆上的記號要跟著更新
+  const close=()=>{v.remove();if(dirty&&S.tab==='proj')render();};
+  v.onclick=e=>{if(e.target===v)close();};
+  v.querySelector('.x').onclick=close;
+  v.querySelector('#no').onclick=close;
   bindStamps(v);
-  // 先放縮圖，原圖到了再換上
   getFull(id).then(u=>{const im=v.querySelector('#pv');if(im&&u)im.src=u;}).catch(()=>{});
-  v.querySelector('#no').onclick=()=>v.remove();
-  const ok=v.querySelector('#ok');
-  const te=v.querySelector('#toedit');
-  if(te)te.onclick=()=>{v.querySelector('#view').classList.add('hide');
-    v.querySelector('#editbox').classList.remove('hide');if(ok)ok.classList.remove('hide');paintFields(v);};
-  v.querySelectorAll('[data-uc]').forEach(b=>b.onclick=()=>{
-    cat=b.dataset.uc;v.querySelectorAll('[data-uc]').forEach(x=>x.classList.toggle('on',x.dataset.uc===cat));
-  });
+
+  // 說明：有改才出現「存好」
+  const cap=v.querySelector('#cap'),cs=v.querySelector('#capsave');
+  if(cap){
+    cap.oninput=()=>cs.classList.toggle('hide',cap.value===(p.caption||''));
+    v.querySelector('#capok').onclick=async()=>{
+      const b=v.querySelector('#capok');b.disabled=true;E.innerHTML='<span class="spin"></span>';
+      try{await api('updatePhoto',{id,caption:cap.value});p.caption=cap.value;dirty=true;
+        cs.classList.add('hide');E.textContent='';}
+      catch(e){E.textContent=e.message;}
+      b.disabled=false;
+    };
+  }
+
+  // 留言
+  const drawCmts=()=>{
+    const box=v.querySelector('#cmts'),list=commentsFor(id);
+    box.innerHTML=list.length?list.map(c=>`<div class="cmt">${whoTag(c.owner)}
+      <span class="ct">${richText(c.text)}</span>
+      <span class="cd">${esc(pDate(c.createdAt))}</span>
+      ${c.owner===S.user?`<button class="cb del" data-cdel="${esc(c.id)}" aria-label="${esc(t('delete'))}">✕</button>`:''}</div>`).join('')
+      :`<p class="cap sys" style="margin:2px 0 0">${esc(PT('noReplies','還沒有人留言'))}</p>`;
+    box.querySelectorAll('[data-cdel]').forEach(b=>b.onclick=()=>confirmDelete('quote',async()=>{
+      await api('deleteComment',{id:b.dataset.cdel});
+      S.proj.comments=S.proj.comments.filter(x=>x.id!==b.dataset.cdel);dirty=true;drawCmts();
+    }));
+  };
+  drawCmts();
+  const cm=v.querySelector('#cm'),cms=v.querySelector('#cms');
+  cms.onclick=async()=>{
+    const text=cm.value.trim();if(!text)return;
+    cms.disabled=true;E.innerHTML='<span class="spin"></span>';
+    try{
+      const c=await api('addComment',{targetId:id,text});
+      (S.proj.comments||(S.proj.comments=[])).push(c);dirty=true;
+      cm.value='';E.textContent='';drawCmts();
+    }catch(e){E.textContent=e.message;}
+    cms.disabled=false;
+  };
+
   const cv=v.querySelector('#cover');
   if(cv)cv.onclick=async()=>{
     cv.disabled=true;
-    try{await saveProjectWith(P,{coverPhotoId:id});P.coverPhotoId=id;v.remove();await reloadProject();}
-    catch(e){cv.disabled=false;v.querySelector('#e').textContent=e.message;}
+    try{await saveProjectWith(P,{coverPhotoId:id});P.coverPhotoId=id;
+      cv.outerHTML=`<span class="cap sys" style="margin:0">${esc(PT('isCover','這張是封面'))}</span>`;}
+    catch(e){cv.disabled=false;E.textContent=e.message;}
   };
+  const more=v.querySelector('#more');
+  if(more)more.onclick=()=>{v.querySelector('#morebox').classList.toggle('hide');};
+  v.querySelectorAll('[data-uc]').forEach(b=>b.onclick=async()=>{
+    const next=b.dataset.uc;if(next===cat)return;
+    E.innerHTML='<span class="spin"></span>';
+    try{await api('updatePhoto',{id,projectCat:next});cat=next;p.projectCat=next;dirty=true;E.textContent='';
+      v.querySelectorAll('[data-uc]').forEach(x=>x.classList.toggle('on',x.dataset.uc===cat));}
+    catch(e){E.textContent=e.message;}
+  });
   const del=v.querySelector('#del');
   if(del)del.onclick=()=>confirmDelete('photo',async()=>{
     await api('deletePhoto',{id});
@@ -2483,13 +2584,37 @@ function panelProjectPhoto(id){
     if(store){try{await store.delete('/thumb/'+id);await store.delete('/photo/'+id);}catch(e){}}
     v.remove();await reloadProject();
   });
-  if(ok)ok.onclick=async()=>{
-    ok.disabled=true;v.querySelector('#e').innerHTML='<span class="spin"></span>';
-    try{
-      await api('updatePhoto',{id,caption:v.querySelector('#cap').value,projectCat:cat});
-      v.remove();await reloadProject();
-    }catch(e){ok.disabled=false;v.querySelector('#e').textContent=e.message;}
+}
+
+/* ── 傳完一批，一張一張補幾句 ──
+   一次傳很多張時沒有機會寫字，所以傳完再給一次機會。不想寫就跳過。 */
+function panelWalk(ids,i){
+  const list=ids.filter(x=>S.proj&&S.proj.photos.some(p=>p.id===x));
+  if(i>=list.length){Q.total=0;Q.mine=[];if(S.tab==='proj')render();return;}
+  const p=S.proj.photos.filter(x=>x.id===list[i])[0];
+  const last=i+1>=list.length;
+  const v=panel(`<p class="cap sys" style="margin:0 0 10px">${i+1} / ${list.length}　${esc(catName(S.proj.project.photoCats,p.projectCat))}</p>
+    <img class="preview" id="pv" src="${S.thumbCache[p.id]||''}" alt="">
+    <div class="field"><textarea id="cap" rows="3" placeholder="${esc(PT('captionHint','寫一點這張的事'))}">${esc(p.caption)}</textarea></div>
+    <div class="err" id="e"></div>
+    <div class="row">${btn(PT('skip','跳過'),'','id="no"')}${btn(last?tf('ui.save','存好'):PT('saveNext','存好，下一張'),'warm','id="ok"')}</div>`);
+  getFull(p.id).then(u=>{const im=v.querySelector('#pv');if(im&&u)im.src=u;}).catch(()=>{});
+  // 按 ✕ 或點外面＝今天先到這裡
+  const stop=()=>{v.remove();if(S.tab==='proj')render();};
+  v.onclick=e=>{if(e.target===v)stop();};
+  v.querySelector('.x').onclick=stop;
+  v.querySelector('#no').onclick=()=>{v.remove();panelWalk(ids,i+1);};
+  const ok=v.querySelector('#ok');
+  ok.onclick=async()=>{
+    const text=v.querySelector('#cap').value;
+    if(text!==(p.caption||'')){
+      ok.disabled=true;v.querySelector('#e').innerHTML='<span class="spin"></span>';
+      try{await api('updatePhoto',{id:p.id,caption:text});p.caption=text;}
+      catch(e){ok.disabled=false;v.querySelector('#e').textContent=e.message;return;}
+    }
+    v.remove();panelWalk(ids,i+1);
   };
+  setTimeout(()=>{const c=v.querySelector('#cap');if(c)c.focus();},60);
 }
 
 /* ── 面板：寫一則 ── */

@@ -25,6 +25,7 @@
   --ochre:#C98A3C;
   --blue:#7A93A3;
   --sage:#8B9B72;
+  --rose:#C08A7C;   /* 原本有用到卻沒定義，「想跟你說的話」一直被畫成黑色 */
   --brush:'LXGW WenKai TC','Klee One',"Noto Serif TC",serif;
   --ledger:'IBM Plex Mono',ui-monospace,monospace;
   --sheet:min(480px,100%);
@@ -218,6 +219,64 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 
 /* ── 三扇門 ── */
 .doors{margin-top:28px;display:flex;flex-direction:column;gap:11px}
+/* 門放在最上面時縮成兩欄，寫字的地方永遠一伸手就到 */
+.doors.top{margin:6px 0 24px;display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.doors.top .door{padding:11px 13px}
+.doors.top .door span{font-size:.86rem;line-height:1.5}
+.qmonth{margin-top:4px}
+.qm-h{display:flex;align-items:baseline;gap:10px;width:100%;padding:13px 2px 9px;text-align:left;
+  border-bottom:1px dashed rgba(0,0,0,.14)}
+.qm-h .mm{font-size:1.02rem;letter-spacing:.04em}
+.qm-h .n{font-family:var(--ledger);font-size:.72rem;color:var(--ink-soft)}
+.qm-h .go{margin-left:auto;font-family:var(--ledger);color:var(--ink-faint)}
+.qm-h.on .mm{color:#8E5F1E}
+
+/* ── 獨立專案 ── */
+.pback{font-family:var(--ledger);font-size:.78rem;letter-spacing:.05em;color:var(--ink-soft);
+  padding:2px 0 14px;position:relative;z-index:1}
+.pcards{display:flex;flex-direction:column;gap:9px;margin:18px 0 2px}
+.pcard{width:100%;padding:13px 16px}
+.door.pcard path{fill:var(--blue);opacity:.75}
+.pcard span{display:flex;align-items:baseline;gap:10px;width:100%}
+.pcard b{font-weight:normal;font-size:1.02rem}
+.pcard em{font-style:normal;font-family:var(--ledger);font-size:.72rem;color:var(--ink-soft)}
+.pcard i{font-style:normal;margin-left:auto;color:var(--ink-faint)}
+.psec{margin-top:26px;position:relative;z-index:1}
+.psec-h{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.psec-h h2{font-size:1.2rem}
+.btn.small{padding:7px 15px;min-height:0}
+.btn.small span{font-size:.88rem}
+.pgroup{margin-top:20px}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.ptile{position:relative;aspect-ratio:1/1;cursor:pointer}
+.ptile img{position:absolute;inset:4px;width:calc(100% - 8px);height:calc(100% - 8px);
+  object-fit:cover;opacity:0;transition:opacity .45s ease;border-radius:2px}
+.ptile img.in{opacity:1}
+.ptile .line{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:2;pointer-events:none}
+.ptile .line path{fill:var(--ink);stroke:none;fill-rule:evenodd;opacity:.8}
+.pqueue{margin:2px 0 16px}
+.pqueue .bar{height:5px;border-radius:3px;background:rgba(0,0,0,.07);overflow:hidden}
+.pqueue .bar i{display:block;height:100%;background:var(--ochre);transition:width .4s ease}
+.pqueue .cap{margin-top:7px}
+.pqueue .btn{margin-top:8px}
+.pnotes{margin-top:38px}
+.pnotes .doors.top{margin-top:0}
+.pacts{margin-top:14px;display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}
+/* 編輯專案 */
+.plabel{font-family:var(--ledger);font-size:.72rem;letter-spacing:.06em;color:var(--ink-soft);margin:18px 0 0}
+.dates{display:flex;gap:12px}
+.dates .field{flex:1}
+.crow{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.crow .field{flex:1;min-width:110px;padding:6px 2px 9px}
+.crow.hid .field input{color:var(--ink-faint);text-decoration:line-through}
+.cbtns{display:flex;align-items:center;gap:1px}
+.cnum{font-family:var(--ledger);font-size:.66rem;color:var(--ink-faint);min-width:18px;text-align:right;margin-right:2px}
+.cb{font-family:var(--ledger);font-size:.74rem;padding:7px 7px;color:var(--ink-soft);border-radius:6px}
+.cb:disabled{opacity:.25}
+.cb.on{color:#9A6357;background:rgba(200,140,130,.14)}
+.cb.del{color:#A3502A}
+.cmove{width:100%;padding:2px 0 10px}
+.pdanger{margin-top:26px;padding-top:14px;border-top:1px dashed rgba(0,0,0,.14)}
 .door{position:relative;text-align:left;padding:15px 18px;min-height:0}
 .door span{position:relative;z-index:1;font-size:1rem}
 .door svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
@@ -572,13 +631,14 @@ function vignette(kind){
    API
    ══════════════════════════════════════════ */
 /* 版本標記。設定面板最下面會顯示，用來確認手機上跑的是哪一版。 */
-const BUILD='2026-09-10 · 貼網址會變成連結';
+const BUILD='2026-10-15 · 獨立專案';
 
 const LS={url:'jo.url',token:'jo.token',seen:'jo.welcomed',fgSys:'jo.fgSystem'};
 const BAKED=(typeof API_URL!=='undefined'&&API_URL)?API_URL:'';
 const S={url:BAKED||localStorage.getItem(LS.url)||'',token:localStorage.getItem(LS.token)||'',
   user:'',partner:'',copy:{},settings:{},stamps:[],stampSets:{},pending:[],
-  view:null,tab:'month',imgCache:{},qfilter:'',ym:null,months:[],unseen:[],justRevealed:null};
+  view:null,tab:'month',imgCache:{},qfilter:'',ym:null,months:[],unseen:[],justRevealed:null,
+  qopen:{},projects:[],pid:null,proj:null,pcat:'',ncat:'',thumbCache:{}};
 
 /**
  * 送一個請求出去，並且在回來的東西不是 JSON 時說清楚為什麼。
@@ -976,6 +1036,9 @@ function renderMonth(){
     <p class="cap sys" style="margin:0">${left>0?esc(t('home.quotaLeft',{n:left})):esc(t('home.quotaFull'))}</p>
     <button class="lookbtn" id="look"><span>${esc(t('look.btn'))}</span>${
       (S.unseen&&S.unseen.length)?`<em>${S.unseen.length}</em>`:''}</button>
+    ${(!past&&(S.projects||[]).length)?`<div class="pcards">${S.projects.map(p=>
+      `<button class="btn door pcard" data-proj="${esc(p.id)}"><svg preserveAspectRatio="none"></svg>
+        <span><b>${esc(p.name)}</b>${pRange(p)?`<em>${esc(pRange(p))}</em>`:''}<i>›</i></span></button>`).join('')}</div>`:''}
 
     <div class="rule" id="r1"></div>
 
@@ -1067,7 +1130,8 @@ function bindStamps(root){
     b.disabled=true;
     try{
       const r=await api('stamp',{targetType:b.dataset.tt,targetId:b.dataset.ti,stampCode:b.dataset.stamp});
-      const box=[].concat(S.quotes||[],S.view?S.view.mine:[],S.view?S.view.theirs:[]);
+      const box=[].concat(S.quotes||[],S.view?S.view.mine:[],S.view?S.view.theirs:[],
+        S.proj&&S.proj.photos?S.proj.photos:[],S.proj&&S.proj.notes?S.proj.notes:[]);
       const item=box.filter(x=>x.id===b.dataset.ti)[0];
       if(item)item.stamps=r.stamps;
       const wrap=b.closest('.stamps');
@@ -1099,7 +1163,7 @@ function renderQuote(){
     ${KINDS.filter(k=>count(k)).map(k=>fchip(k,t('quote.label.'+k),count(k))).join('')}
   </div>`:'';
 
-  const body=list.length?list.map(q=>`
+  const article=q=>`
     <article class="q" data-qid="${esc(q.id)}" data-kind="${esc(q.kind||'quote')}">
       <div class="lab">${esc(t('quote.label.'+(q.kind||'quote')))}</div>
       ${q.prompt?`<div class="q-tag">${esc(q.prompt)}${q.askedBy?
@@ -1113,7 +1177,25 @@ function renderQuote(){
           <button class="btn plain" data-del="${esc(q.id)}"><span style="color:#A3502A">${esc(t('delete'))}</span></button>`:''}
       </div>
       ${stampRow('quote',q)}
-    </article>`).join('')
+    </article>`;
+
+  // 按月份分組。最新的那個月打開，其他收起來 ——
+  // 不然每多一則，寫字的門就被往下推一格
+  const months=[],byYm={};
+  list.forEach(q=>{
+    const ym=String(q.createdAt||'').slice(0,7)||'—';
+    if(!byYm[ym]){byYm[ym]=[];months.push(ym);}
+    byYm[ym].push(q);
+  });
+  const body=list.length?months.map((ym,i)=>{
+    const open=(ym in S.qopen)?S.qopen[ym]:(i===0);
+    const lab=/^\d{4}-\d{2}$/.test(ym)?(()=>{const {y,m}=monthLabel(ym);return y+' · '+m;})():ym;
+    return `<div class="qmonth">
+      <button class="qm-h ${open?'on':''}" data-qm="${esc(ym)}">
+        <span class="mm">${esc(lab)}</span><span class="n">${byYm[ym].length}</span>
+        <span class="go">${open?'－':'＋'}</span></button>
+      ${open?byYm[ym].map(article).join(''):''}</div>`;
+  }).join('')
     : `<div class="vig-wrap">${vignette('cup')}<p class="cap">${esc(t('quote.empty'))}</p></div>`;
 
   const door=(k,cls)=>`<button class="btn door ${cls||''}" data-door="${k}">
@@ -1136,10 +1218,10 @@ function renderQuote(){
     <div class="head"><h1 class="ym">${esc(t('quote.title'))}</h1>
       <span class="led">${all.length}</span></div>
     <div class="rule" id="r1"></div>
+    <div class="doors top">${door('quote')}${door('note')}${door('say','say')}${door('ask','ask')}</div>
     ${asks}
     ${filters}
     ${body}
-    <div class="doors">${door('quote')}${door('note')}${door('say','say')}${door('ask','ask')}</div>
   </div>`;
 }
 
@@ -1247,7 +1329,7 @@ function panelQuote(kind,existing,existingToss){
         await api('addQuote',{kind:k,text,
           source:src?src.value.trim():'', prompt:p, tossId:existingToss});
       }
-      v.remove();S.quotes=await api('listQuotes',{});render();
+      v.remove();S.quotes=await api('listQuotes',{limit:100000});render();
     }catch(e){ok.disabled=false;v.querySelector('#e').textContent=e.message;}
   };
 }
@@ -1271,7 +1353,7 @@ function panelAnswer(p){
       await api('addQuote',{kind:'ask',text,tossId:p.id});
       v.remove();
       S.pending=(S.pending||[]).filter(x=>x.id!==p.id);
-      S.quotes=await api('listQuotes',{});render();
+      S.quotes=await api('listQuotes',{limit:100000});render();
     }catch(e){ok.disabled=false;v.querySelector('#e').textContent=e.message;}
   };
 }
@@ -1503,8 +1585,22 @@ async function loadJar(){
 async function panelLook(){
   const v=panel(`<h3>${esc(t('look.title'))}</h3>
     <div id="mlist"><p class="cap sys"><span class="spin"></span></p></div>
-    <div class="row">${btn(tf('ui.close','關起來'),'','id="no"')}</div>`);
+    <p class="plabel">${esc(PT('listTitle','專案'))}</p>
+    <div id="plist"><p class="cap sys"><span class="spin"></span></p></div>
+    <div class="row">${btn(tf('ui.close','關起來'),'','id="no"')}${btn(PT('new','開一個專案'),'warm','id="pnew"')}</div>`);
   v.querySelector('#no').onclick=()=>v.remove();
+  v.querySelector('#pnew').onclick=()=>{v.remove();panelProjectEdit(null);};
+  api('listProjects',{}).then(list=>{
+    S.plist=list;
+    const el=v.querySelector('#plist');if(!el)return;
+    el.innerHTML=list.length?list.map(p=>`<button class="mrow" data-lp="${esc(p.id)}">
+      <span class="mm">${esc(p.name)}</span>
+      <span class="cnt"><span>${esc(PT('count','{p} 張・{n} 則',{p:p.photos,n:p.notes}))}</span>
+        ${p.status==='closed'?`<span>${esc(PT('closed','收起來了'))}</span>`:''}</span>
+      <span class="go">›</span></button>`).join('')
+      :`<p class="cap sys">${esc(PT('none','還沒有專案'))}</p>`;
+    el.querySelectorAll('[data-lp]').forEach(b=>b.onclick=()=>{v.remove();openProject(b.dataset.lp);});
+  }).catch(e=>{const el=v.querySelector('#plist');if(el)el.innerHTML=`<p class="cap sys">${esc(e.message)}</p>`;});
   let rows=[];
   try{ rows=await api('archive',{}); }
   catch(e){ v.querySelector('#mlist').innerHTML='<p class="cap sys">'+esc(e.message)+'</p>'; return; }
@@ -1570,7 +1666,8 @@ function render(){
   washDefs();
   if(!localStorage.getItem(LS.seen)){screenWelcome();return;}
   const app=document.getElementById('app');
-  const page=S.tab==='hut'?renderHut()
+  const page=S.tab==='proj'?renderProject()
+    :S.tab==='hut'?renderHut()
     :S.tab==='quote'?renderQuote()
     :S.tab==='jar'?renderJar():renderMonth();
   app.innerHTML=page+nav();
@@ -1583,7 +1680,7 @@ function render(){
     S.tab=b.dataset.tab;
     try{
       if(S.tab==='hut'&&!S.hut)await loadHut();
-      if(S.tab==='quote'&&!S.quotes)S.quotes=await api('listQuotes',{});
+      if(S.tab==='quote'&&!S.quotes)S.quotes=await api('listQuotes',{limit:100000});
       if(S.tab==='jar'&&!S.jar)await loadJar();
     }catch(e){}
     render();
@@ -1603,6 +1700,12 @@ function render(){
   app.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{
     S.qfilter=b.dataset.f;render();
   });
+  app.querySelectorAll('[data-qm]').forEach(b=>b.onclick=()=>{
+    const ym=b.dataset.qm;
+    S.qopen[ym]=!b.classList.contains('on');render();
+  });
+  app.querySelectorAll('[data-proj]').forEach(b=>b.onclick=()=>openProject(b.dataset.proj));
+  if(S.tab==='proj')bindProject(app);
   app.querySelectorAll('.tossed').forEach(el=>{
     const svg=el.querySelector('svg');
     const draw=()=>{const w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;
@@ -1629,7 +1732,7 @@ function render(){
   app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>
     confirmDelete('quote',async()=>{
       await api('deleteQuote',{id:b.dataset.del});
-      S.quotes=await api('listQuotes',{});render();
+      S.quotes=await api('listQuotes',{limit:100000});render();
     }));
   app.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{
     const q=(S.quotes||[]).filter(x=>x.id===b.dataset.edit)[0];
@@ -1945,6 +2048,651 @@ async function openPhoto(id){
 }
 
 /* ══════════════════════════════════════════
+   獨立專案
+
+   旅行、重要的事。不算配額、不用等揭曉，放了就看得到。
+   名稱、日期、分類全部在這裡改，不用碰試算表，也不用找人改程式。
+
+   跟月份最大的不同：數量不設限。所以
+   ・牆上只放縮圖，點開才載原圖（兩百張原圖一起進記憶體，手機會把 app 關掉）
+   ・縮圖捲到才載
+   ・一次可以選很多張，排隊上傳，三張同時傳
+   ══════════════════════════════════════════ */
+const PT=(k,fb,v)=>tf('proj.'+k,fb,v);
+const PWASH=['#D9A05B','#A6BC84','#C89A86','#93B4C6'];
+
+function visCats(list){return (list||[]).filter(c=>!c.hidden);}
+function catName(list,id){const c=(list||[]).filter(x=>x.id===id)[0];return c?c.name:'';}
+function pDate(s){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||'');return m?`${+m[2]}/${+m[3]}`:'';}
+function pRange(p){const a=pDate(p.startDate),b=pDate(p.endDate);return a&&b?`${a} – ${b}`:(a||b);}
+function newCatId(){return 'c'+Math.random().toString(36).slice(2,12);}
+
+async function openProject(id){
+  S.tab='proj';S.pid=id;S.proj=null;S.pcat='';S.ncat='';
+  window.scrollTo(0,0);
+  render();
+  try{S.proj=await api('projectView',{id});}
+  catch(e){S.proj={error:e.message};}
+  if(S.tab==='proj'&&S.pid===id)render();
+}
+async function reloadProject(){
+  if(!S.pid)return;
+  try{S.proj=await api('projectView',{id:S.pid});}catch(e){}
+  if(S.tab==='proj')render();
+}
+
+/** 存專案。改一個地方也要整包送：後端是整份覆寫，不是補丁。 */
+function saveProjectWith(P,patch){
+  const body={id:P.id,name:P.name,note:P.note,startDate:P.startDate,endDate:P.endDate,
+    photoCats:P.photoCats,noteCats:P.noteCats,coverPhotoId:P.coverPhotoId,status:P.status};
+  return api('saveProject',Object.assign(body,patch||{}));
+}
+
+function renderProject(){
+  const back=`<button class="pback" id="pback">${esc(PT('back','← 回到這個月'))}</button>`;
+  if(!S.proj)return `<div class="sheet">${back}<p class="cap sys"><span class="spin"></span></p></div>`;
+  if(S.proj.error)return `<div class="sheet">${back}<p class="cap">${esc(S.proj.error)}</p></div>`;
+
+  const P=S.proj.project,photos=S.proj.photos||[],notes=S.proj.notes||[];
+  const pc=visCats(P.photoCats),nc=visCats(P.noteCats);
+  const pOk={},nOk={};pc.forEach(c=>pOk[c.id]=1);nc.forEach(c=>nOk[c.id]=1);
+  // 藏起來的分類，裡面的東西也一起藏。資料還在，取消隱藏就回來
+  const shownP=photos.filter(p=>pOk[p.projectCat])
+    .sort((a,b)=>String(a.takenAt).localeCompare(String(b.takenAt))||String(a.createdAt).localeCompare(String(b.createdAt)));
+  const shownN=notes.filter(q=>nOk[q.projectCat])
+    .sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
+
+  let photoSec='';
+  if(pc.length){
+    if(S.pcat&&!pOk[S.pcat])S.pcat='';
+    const cnt=id=>shownP.filter(p=>p.projectCat===id).length;
+    const chip=(id,label,n)=>`<button class="chip ${S.pcat===id?'on':''}" data-pc="${esc(id)}">${esc(label)}<span class="n">${n}</span></button>`;
+    const tile=p=>`<div class="ptile" data-ppid="${esc(p.id)}" data-seed="${hash(p.id)%9973}" role="button" tabindex="0"><img data-tid="${esc(p.id)}" alt=""></div>`;
+    const groups=(S.pcat?pc.filter(c=>c.id===S.pcat):pc).map(c=>{
+      const i=pc.indexOf(c);
+      const ps=shownP.filter(p=>p.projectCat===c.id);
+      if(!ps.length&&!S.pcat)return '';
+      const head=S.pcat?'':`<div class="group-head">${wash(120,52,PWASH[i%4],0.26,'wash'+(1+i%2))}
+        <h2>${esc(c.name)}</h2><span class="led">${ps.length}</span></div>`;
+      return `<section class="pgroup">${head}${ps.length?`<div class="pgrid">${ps.map(tile).join('')}</div>`
+        :`<p class="cap sys">${esc(PT('emptyCat','這個分類還沒有照片'))}</p>`}</section>`;
+    }).join('');
+    photoSec=`<section class="psec">
+      <div class="psec-h"><h2>${esc(PT('photos','照片'))}</h2>${btn(PT('addPhotos','＋ 放照片'),'warm small','id="padd"')}</div>
+      ${queueBar()}
+      ${shownP.length?`<div class="filters">${chip('',PT('all','全部'),shownP.length)}${pc.map(c=>chip(c.id,c.name,cnt(c.id))).join('')}</div>`:''}
+      ${shownP.length?groups:`<p class="cap sys">${esc(PT('noPhotos','還沒有照片'))}</p>`}
+    </section>`;
+  }
+
+  let noteSec='';
+  if(nc.length){
+    if(S.ncat&&!nOk[S.ncat])S.ncat='';
+    const cnt=id=>shownN.filter(q=>q.projectCat===id).length;
+    const chip=(id,label,n)=>`<button class="chip ${S.ncat===id?'on':''}" data-nc="${esc(id)}">${esc(label)}<span class="n">${n}</span></button>`;
+    // 會通知對方的分類，門用「想跟你說」的那個顏色 —— 跟金句本的語言一致
+    const doors=nc.map(c=>`<button class="btn door ${c.notify?'say':''}" data-pnote="${esc(c.id)}">
+      <svg preserveAspectRatio="none"></svg><span>${esc(c.name)}</span></button>`).join('');
+    const list=S.ncat?shownN.filter(q=>q.projectCat===S.ncat):shownN;
+    const art=q=>`<article class="q" data-kind="${(nc.filter(c=>c.id===q.projectCat)[0]||{}).notify?'say':'note'}">
+      <div class="lab">${esc(catName(P.noteCats,q.projectCat))}</div>
+      <div class="txt">${richText(q.text)}</div>
+      ${linkRow(q.text)}
+      <div class="meta">
+        <span class="who">${esc(q.owner)}${esc(PT('wrote','記下'))}　${esc(pDate(q.createdAt))}</span>
+        ${q.owner===S.user?`<button class="btn plain" data-pnedit="${esc(q.id)}"><span>${esc(PT('edit','改'))}</span></button>
+          <button class="btn plain" data-pndel="${esc(q.id)}"><span style="color:#A3502A">${esc(t('delete'))}</span></button>`:''}
+      </div>
+      ${stampRow('quote',q)}
+    </article>`;
+    noteSec=`<section class="psec pnotes">
+      <div class="psec-h"><h2>${esc(PT('notes','文字'))}</h2></div>
+      <div class="doors top">${doors}</div>
+      ${shownN.length?`<div class="filters">${chip('',PT('all','全部'),shownN.length)}${nc.map(c=>chip(c.id,c.name,cnt(c.id))).join('')}</div>`:''}
+      ${list.map(art).join('')}
+    </section>`;
+  }
+
+  const sub=[pRange(P),P.note].filter(Boolean).join('　');
+  return `<div class="sheet proj">
+    ${wash(300,210,'#93B4C6',0.12,'wash2')}
+    ${back}
+    <div class="head"><h1 class="ym">${esc(P.name)}</h1>
+      <span class="led">${P.status==='closed'?esc(PT('closed','收起來了')):''}</span></div>
+    ${sub?`<p class="cap sys" style="margin:0">${esc(sub)}</p>`:''}
+    <button class="lookbtn" id="pedit"><span>${esc(PT('editProject','改這個專案'))}</span></button>
+    <div class="rule" id="r1"></div>
+    ${photoSec}${noteSec}
+    ${(!pc.length&&!nc.length)?`<p class="cap">${esc(PT('noCats','還沒有分類。按「改這個專案」加幾個。'))}</p>`:''}
+  </div>`;
+}
+
+function bindProject(app){
+  const bk=app.querySelector('#pback');
+  if(bk)bk.onclick=()=>{S.tab='month';S.pid=null;S.proj=null;render();window.scrollTo(0,0);};
+  if(!S.proj||S.proj.error)return;
+  app.querySelectorAll('.ptile').forEach(el=>{
+    inkBox(el,Number(el.dataset.seed));
+    const go=()=>panelProjectPhoto(el.dataset.ppid);
+    el.onclick=go;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}};
+  });
+  watchThumbs(app);
+  app.querySelectorAll('[data-pc]').forEach(b=>b.onclick=()=>{S.pcat=b.dataset.pc;render();});
+  app.querySelectorAll('[data-nc]').forEach(b=>b.onclick=()=>{S.ncat=b.dataset.nc;render();});
+  const pe=app.querySelector('#pedit');if(pe)pe.onclick=()=>panelProjectEdit(S.proj.project);
+  const pa=app.querySelector('#padd');if(pa)pa.onclick=()=>panelProjectUpload();
+  const rq=app.querySelector('#qretry');if(rq)rq.onclick=()=>retryFailed();
+  app.querySelectorAll('[data-pnote]').forEach(b=>b.onclick=()=>panelProjectNote(b.dataset.pnote,null));
+  app.querySelectorAll('[data-pnedit]').forEach(b=>b.onclick=()=>{
+    const q=S.proj.notes.filter(x=>x.id===b.dataset.pnedit)[0];if(q)panelProjectNote(q.projectCat,q);
+  });
+  app.querySelectorAll('[data-pndel]').forEach(b=>b.onclick=()=>confirmDelete('quote',async()=>{
+    await api('deleteQuote',{id:b.dataset.pndel});await reloadProject();
+  }));
+}
+
+/* ── 縮圖：捲到才載，十二張一批 ── */
+let thumbIO=null,thumbBusy=false;
+const thumbWant=new Set();
+function watchThumbs(root){
+  if(thumbIO)thumbIO.disconnect();
+  const io=('IntersectionObserver' in window)?new IntersectionObserver(es=>{
+    es.forEach(e=>{if(e.isIntersecting){io.unobserve(e.target);thumbWant.add(e.target.dataset.tid);}});
+    pumpThumbs();
+  },{rootMargin:'500px 0px'}):null;
+  thumbIO=io;
+  root.querySelectorAll('img[data-tid]').forEach(img=>{
+    const id=img.dataset.tid;
+    if(S.thumbCache[id]){paint(img,S.thumbCache[id]);return;}
+    if(io)io.observe(img);else thumbWant.add(id);
+  });
+  if(!io)pumpThumbs();
+}
+function showThumb(id,u){
+  document.querySelectorAll('img[data-tid]').forEach(img=>{if(img.dataset.tid===id)paint(img,u);});
+}
+async function pumpThumbs(){
+  if(thumbBusy)return;thumbBusy=true;
+  const store=await photoStore();
+  try{
+    while(thumbWant.size){
+      const ids=[...thumbWant].slice(0,12);ids.forEach(i=>thumbWant.delete(i));
+      const need=[];
+      for(const id of ids){
+        let u=null;
+        if(store){try{const h=await store.match('/thumb/'+id);if(h)u=await h.text();}catch(e){}}
+        if(u){S.thumbCache[id]=u;showThumb(id,u);}else need.push(id);
+      }
+      if(!need.length)continue;
+      let rows=[];
+      try{rows=await api('photoBatch',{ids:need,thumb:true});}catch(e){continue;}
+      for(const r of rows){
+        let u='data:'+r.mimeType+';base64,'+r.dataBase64;
+        // 沒有縮圖的照片會拿到原圖，在這裡自己縮，不讓大圖留在記憶體
+        if(r.dataBase64.length>160000){try{u=await downsize(u,420);}catch(e){}}
+        S.thumbCache[r.id]=u;showThumb(r.id,u);
+        if(store){try{await store.put('/thumb/'+r.id,new Response(u));}catch(e){}}
+      }
+    }
+  }finally{thumbBusy=false;}
+}
+function downsize(url,max){
+  return new Promise((res,rej)=>{
+    const img=new Image();
+    img.onload=()=>{
+      const sc=Math.min(1,max/Math.max(img.width,img.height));
+      const cv=document.createElement('canvas');
+      cv.width=Math.round(img.width*sc);cv.height=Math.round(img.height*sc);
+      cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+      res(cv.toDataURL('image/jpeg',.78));
+    };
+    img.onerror=rej;img.src=url;
+  });
+}
+/** 原圖只在點開時載，存進快取但不留在記憶體 */
+async function getFull(id){
+  const store=await photoStore();
+  if(store){try{const h=await store.match('/photo/'+id);if(h)return await h.text();}catch(e){}}
+  const d=await api('photoData',{id});
+  const u='data:'+d.mimeType+';base64,'+d.dataBase64;
+  if(store){try{await store.put('/photo/'+id,new Response(u));}catch(e){}}
+  return u;
+}
+
+/* ── 拍攝時間 ──
+   縮圖用的 canvas 會把照片裡的資訊洗掉，所以要在縮之前，從原始檔讀出來。
+   只讀 JPEG 的 EXIF；讀不到（例如 HEIC）就退回檔案時間。 */
+async function takenAtOf(file){
+  try{
+    const buf=await file.slice(0,262144).arrayBuffer();
+    const d=exifDate(new DataView(buf));
+    if(d)return d;
+  }catch(e){}
+  return localIso(new Date(file.lastModified||Date.now()));
+}
+function localIso(d){
+  const z=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}`;
+}
+function exifDate(dv){
+  if(dv.getUint16(0)!==0xFFD8)return null;
+  let off=2;
+  while(off+4<dv.byteLength){
+    const mk=dv.getUint16(off);
+    if((mk&0xFF00)!==0xFF00)return null;
+    if(mk===0xFFDA)return null;
+    const len=dv.getUint16(off+2);
+    if(mk===0xFFE1&&dv.getUint32(off+4)===0x45786966)return tiffDate(dv,off+10);
+    off+=2+len;
+  }
+  return null;
+}
+function tiffDate(dv,t){
+  const le=dv.getUint16(t)===0x4949;
+  const u16=o=>dv.getUint16(t+o,le),u32=o=>dv.getUint32(t+o,le);
+  const read=(ifd,want)=>{
+    const out={},n=u16(ifd);
+    for(let i=0;i<n;i++){
+      const e=ifd+2+i*12,tag=u16(e);
+      if(want.indexOf(tag)<0)continue;
+      const type=u16(e+2),cnt=u32(e+4);
+      if(type===2){
+        const p=cnt>4?u32(e+8):e+8;let s='';
+        for(let k=0;k<cnt-1;k++)s+=String.fromCharCode(dv.getUint8(t+p+k));
+        out[tag]=s;
+      }else out[tag]=u32(e+8);
+    }
+    return out;
+  };
+  const ifd0=read(u32(4),[0x8769,0x0132]);
+  let s=null;
+  if(ifd0[0x8769]){const ex=read(ifd0[0x8769],[0x9003,0x9004]);s=ex[0x9003]||ex[0x9004];}
+  s=s||ifd0[0x0132];
+  const m=/^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})/.exec(s||'');
+  return m?`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}`:null;
+}
+
+/** 一張照片做兩個尺寸：原圖 1800、縮圖 420。直接用檔案網址讀，不先轉成一大串文字 */
+function prepare(file){
+  return new Promise((res,rej)=>{
+    const url=URL.createObjectURL(file);
+    const img=new Image();
+    img.onload=()=>{
+      const at=max=>{
+        const sc=Math.min(1,max/Math.max(img.width,img.height));
+        const cv=document.createElement('canvas');
+        cv.width=Math.round(img.width*sc);cv.height=Math.round(img.height*sc);
+        cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+        return cv;
+      };
+      const b64=at(1800).toDataURL('image/jpeg',.86).split(',')[1];
+      const tb64=at(420).toDataURL('image/jpeg',.78).split(',')[1];
+      URL.revokeObjectURL(url);
+      res({b64,tb64});
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error(PT('badImage','這張讀不出來')));};
+    img.src=url;
+  });
+}
+
+/* ── 上傳佇列 ── */
+const Q={items:[],running:0,done:0,fail:[],total:0,pid:null};
+let qTick=0,wakeLock=null;
+
+function queueBar(){
+  if(!Q.total||Q.pid!==S.pid)return '';
+  const left=Q.total-Q.done-Q.fail.length;
+  if(left>0)return `<div class="pqueue"><div class="bar"><i style="width:${Math.round(Q.done/Q.total*100)}%"></i></div>
+    <p class="cap sys">${esc(PT('uploading','上傳中 {done} / {total}　請不要關掉 app',{done:Q.done,total:Q.total}))}</p></div>`;
+  if(Q.fail.length)return `<div class="pqueue"><p class="cap sys">${esc(PT('failed','有 {n} 張沒傳上去',{n:Q.fail.length}))}</p>
+    ${btn(PT('retry','再試一次'),'small','id="qretry"')}</div>`;
+  return '';
+}
+function enqueue(files,cat){
+  if(Q.pid!==S.pid||Q.done+Q.fail.length>=Q.total){Q.items=[];Q.done=0;Q.fail=[];Q.total=0;}
+  Q.pid=S.pid;
+  files.forEach(f=>Q.items.push({file:f,cat,pid:S.pid,tries:0}));
+  Q.total+=files.length;
+  keepAwake(true);
+  for(let i=Q.running;i<3;i++)worker();
+  render();
+}
+function retryFailed(){
+  const f=Q.fail.splice(0);
+  f.forEach(it=>{it.tries=0;Q.items.push(it);});
+  keepAwake(true);
+  for(let i=Q.running;i<3;i++)worker();
+  render();
+}
+async function worker(){
+  Q.running++;
+  try{
+    while(Q.items.length){
+      const it=Q.items.shift();
+      try{await sendOne(it);Q.done++;}
+      catch(e){it.tries++;it.err=e.message;if(it.tries<3)Q.items.push(it);else Q.fail.push(it);}
+      softRender(false);
+    }
+  }finally{
+    Q.running--;
+    if(!Q.running){keepAwake(false);softRender(true);}
+  }
+}
+async function sendOne(it){
+  const takenAt=await takenAtOf(it.file);
+  const img=await prepare(it.file);
+  const r=await api('uploadPhoto',{projectId:it.pid,projectCat:it.cat,
+    dataBase64:img.b64,mimeType:'image/jpeg',thumbBase64:img.tb64,takenAt});
+  const u='data:image/jpeg;base64,'+img.tb64;
+  S.thumbCache[r.photo.id]=u;
+  const store=await photoStore();
+  if(store){try{await store.put('/thumb/'+r.photo.id,new Response(u));}catch(e){}}
+  if(S.proj&&S.proj.project&&S.proj.project.id===it.pid)S.proj.photos.push(r.photo);
+}
+/** 進度條就地更新；每十二張、還有全部傳完時，才整頁重畫 */
+function softRender(end){
+  if(S.tab!=='proj')return;
+  qTick++;
+  if(end||qTick%12===0){render();return;}
+  const el=document.querySelector('.pqueue');
+  if(!el)return;
+  const html=queueBar();
+  if(!html){el.remove();return;}
+  el.outerHTML=html;
+  paintButtons();
+  const rq=document.querySelector('#qretry');if(rq)rq.onclick=()=>retryFailed();
+}
+/** 傳的時候讓螢幕不要暗掉。支援的瀏覽器才有，不支援就算了 */
+async function keepAwake(on){
+  try{
+    if(on&&!wakeLock&&navigator.wakeLock){
+      wakeLock=await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release',()=>{wakeLock=null;});
+    }else if(!on&&wakeLock){await wakeLock.release();wakeLock=null;}
+  }catch(e){}
+}
+
+/* ── 面板：放照片 ── */
+function panelProjectUpload(){
+  const P=S.proj.project,cats=visCats(P.photoCats);
+  let cat=(S.pcat&&cats.some(c=>c.id===S.pcat))?S.pcat:(cats[0]&&cats[0].id);
+  const v=panel(`<h3>${esc(PT('uploadTitle','放照片'))}</h3>
+    <p class="cap sys" style="margin:0">${esc(PT('uploadPickCat','先選分類，再一次選好幾張'))}</p>
+    <div class="choices">${cats.map(c=>`<button class="chip ${c.id===cat?'on':''}" data-uc="${esc(c.id)}">${esc(c.name)}</button>`).join('')}</div>
+    <p class="note">${esc(PT('uploadNote','照片會照拍攝時間排好。傳的時候請不要關掉 app。'))}</p>
+    <div class="row">${btn(tf('ui.close','關起來'),'','id="no"')}${btn(PT('pick','選照片'),'warm','id="ok"')}</div>`);
+  v.querySelector('#no').onclick=()=>v.remove();
+  v.querySelectorAll('[data-uc]').forEach(b=>b.onclick=()=>{
+    cat=b.dataset.uc;v.querySelectorAll('[data-uc]').forEach(x=>x.classList.toggle('on',x.dataset.uc===cat));
+  });
+  v.querySelector('#ok').onclick=()=>{
+    const inp=document.createElement('input');
+    inp.type='file';inp.accept='image/*';inp.multiple=true;
+    inp.onchange=()=>{const fs=[...(inp.files||[])];if(!fs.length)return;v.remove();enqueue(fs,cat);};
+    inp.click();
+  };
+}
+
+/* ── 面板：看一張照片 ── */
+function panelProjectPhoto(id){
+  const P=S.proj.project,p=S.proj.photos.filter(x=>x.id===id)[0];if(!p)return;
+  const mine=p.owner===S.user,cats=visCats(P.photoCats);
+  let cat=p.projectCat;
+  const isCover=P.coverPhotoId===id;
+  const v=panel(`<img class="preview" id="pv" src="${S.thumbCache[id]||''}" alt="">
+    <div id="view">
+      <p class="cap sys" style="margin-top:0">${esc([catName(P.photoCats,p.projectCat),pDate(p.takenAt),p.owner].filter(Boolean).join('　'))}</p>
+      ${p.caption?`<p class="cap" style="margin-top:6px">${esc(p.caption)}</p>`:''}
+      <div class="pacts">
+        ${mine?`<button class="btn plain" id="toedit"><span>${esc(t('edit.title'))}</span></button>`:''}
+        ${isCover?`<span class="cap sys" style="margin:0">${esc(PT('isCover','這張是封面'))}</span>`
+          :`<button class="btn plain" id="cover"><span>${esc(PT('setCover','設成封面'))}</span></button>`}
+      </div>
+    </div>
+    <div id="editbox" class="hide">
+      <div class="field"><textarea id="cap" rows="2" placeholder="${esc(PT('captionHint','說點什麼（可以不寫）'))}">${esc(p.caption)}</textarea></div>
+      <p class="cap sys" style="margin:10px 0 0">${esc(PT('moveCat','換分類'))}</p>
+      <div class="choices">${cats.map(c=>`<button class="chip ${c.id===cat?'on':''}" data-uc="${esc(c.id)}">${esc(c.name)}</button>`).join('')}</div>
+      <div style="margin-top:16px"><button class="btn plain" id="del"><span style="color:#A3502A">${esc(t('delete'))}</span></button></div>
+    </div>
+    ${stampRow('photo',p)}
+    <div class="err" id="e"></div>
+    <div class="row">${btn(tf('ui.close','關起來'),'','id="no"')}${mine?btn(tf('ui.save','存好'),'warm hide','id="ok"'):''}</div>`);
+  bindStamps(v);
+  // 先放縮圖，原圖到了再換上
+  getFull(id).then(u=>{const im=v.querySelector('#pv');if(im&&u)im.src=u;}).catch(()=>{});
+  v.querySelector('#no').onclick=()=>v.remove();
+  const ok=v.querySelector('#ok');
+  const te=v.querySelector('#toedit');
+  if(te)te.onclick=()=>{v.querySelector('#view').classList.add('hide');
+    v.querySelector('#editbox').classList.remove('hide');if(ok)ok.classList.remove('hide');paintFields(v);};
+  v.querySelectorAll('[data-uc]').forEach(b=>b.onclick=()=>{
+    cat=b.dataset.uc;v.querySelectorAll('[data-uc]').forEach(x=>x.classList.toggle('on',x.dataset.uc===cat));
+  });
+  const cv=v.querySelector('#cover');
+  if(cv)cv.onclick=async()=>{
+    cv.disabled=true;
+    try{await saveProjectWith(P,{coverPhotoId:id});P.coverPhotoId=id;v.remove();await reloadProject();}
+    catch(e){cv.disabled=false;v.querySelector('#e').textContent=e.message;}
+  };
+  const del=v.querySelector('#del');
+  if(del)del.onclick=()=>confirmDelete('photo',async()=>{
+    await api('deletePhoto',{id});
+    delete S.thumbCache[id];
+    const store=await photoStore();
+    if(store){try{await store.delete('/thumb/'+id);await store.delete('/photo/'+id);}catch(e){}}
+    v.remove();await reloadProject();
+  });
+  if(ok)ok.onclick=async()=>{
+    ok.disabled=true;v.querySelector('#e').innerHTML='<span class="spin"></span>';
+    try{
+      await api('updatePhoto',{id,caption:v.querySelector('#cap').value,projectCat:cat});
+      v.remove();await reloadProject();
+    }catch(e){ok.disabled=false;v.querySelector('#e').textContent=e.message;}
+  };
+}
+
+/* ── 面板：寫一則 ── */
+function panelProjectNote(catId,existing){
+  const P=S.proj.project,cats=visCats(P.noteCats);
+  let cat=catId;
+  const c0=cats.filter(c=>c.id===catId)[0]||{};
+  const v=panel(`<h3>${esc(existing?t('edit.title'):(c0.name||''))}</h3>
+    ${existing?`<div class="choices">${cats.map(c=>`<button class="chip ${c.id===cat?'on':''}" data-uc="${esc(c.id)}">${esc(c.name)}</button>`).join('')}</div>`:''}
+    <div class="field"><textarea id="tx" rows="5">${esc(existing?existing.text:'')}</textarea></div>
+    ${(!existing&&c0.notify)?`<p class="cap sys">${esc(PT('willNotify','寫下後會通知{who}',{who:S.partner}))}</p>`:''}
+    <div class="err" id="e"></div>
+    <div class="row">${btn(tf('ui.close','關起來'),'','id="no"')}${btn(existing?tf('ui.save','存好'):tf('ui.record','記下來'),'warm','id="ok"')}</div>`);
+  v.querySelector('#no').onclick=()=>v.remove();
+  v.querySelectorAll('[data-uc]').forEach(b=>b.onclick=()=>{
+    cat=b.dataset.uc;v.querySelectorAll('[data-uc]').forEach(x=>x.classList.toggle('on',x.dataset.uc===cat));
+  });
+  const ok=v.querySelector('#ok');
+  ok.onclick=async()=>{
+    const text=v.querySelector('#tx').value.trim();
+    if(!text){v.querySelector('#e').textContent=PT('empty','還沒寫東西');return;}
+    ok.disabled=true;v.querySelector('#e').innerHTML='<span class="spin"></span>';
+    try{
+      if(existing)await api('updateQuote',{id:existing.id,text,projectCat:cat});
+      else await api('addQuote',{projectId:P.id,projectCat:cat,text});
+      v.remove();await reloadProject();
+    }catch(e){ok.disabled=false;v.querySelector('#e').textContent=e.message;}
+  };
+  setTimeout(()=>{const tx=v.querySelector('#tx');if(tx&&!existing)tx.focus();},60);
+}
+
+/* ── 面板：開一個專案／改這個專案 ── */
+async function panelProjectEdit(P){
+  const isNew=!P;
+  const M={
+    name:isNew?'':P.name,note:isNew?'':(P.note||''),
+    startDate:isNew?'':(P.startDate||''),endDate:isNew?'':(P.endDate||''),
+    p:isNew?[]:(P.photoCats||[]).map(c=>Object.assign({},c)),
+    n:isNew?[]:(P.noteCats||[]).map(c=>Object.assign({},c)),
+    moves:{p:{},n:{}},moving:null
+  };
+  // 每個分類裡有多少東西（不管是誰放的）。刪有東西的分類時要問搬去哪
+  const base={p:{},n:{}};
+  if(!isNew&&S.proj){
+    (S.proj.photos||[]).forEach(x=>base.p[x.projectCat]=(base.p[x.projectCat]||0)+1);
+    (S.proj.notes||[]).forEach(x=>base.n[x.projectCat]=(base.n[x.projectCat]||0)+1);
+  }
+  const count=(k,id)=>{
+    let n=base[k][id]||0;
+    Object.keys(M.moves[k]).forEach(from=>{if(M.moves[k][from]===id)n+=base[k][from]||0;});
+    return n;
+  };
+
+  const v=panel(`<h3>${esc(isNew?PT('new','開一個專案'):PT('editProject','改這個專案'))}</h3>
+    <p class="plabel">${esc(PT('name','名稱'))}</p>
+    <div class="field"><input id="pn" maxlength="40" value="${esc(M.name)}"></div>
+    <p class="plabel">${esc(PT('noteLabel','一句話（可以不寫）'))}</p>
+    <div class="field"><input id="pd" maxlength="200" value="${esc(M.note)}"></div>
+    <p class="plabel">${esc(PT('dates','日期（可以不填）'))}</p>
+    <div class="dates"><div class="field"><input type="date" id="ps" value="${esc(M.startDate)}"></div>
+      <div class="field"><input type="date" id="pe" value="${esc(M.endDate)}"></div></div>
+    <div id="tpl"></div>
+    <p class="plabel">${esc(PT('photoCats','照片的分類'))}</p>
+    <div id="cl-p"></div>
+    <button class="btn plain" data-addc="p"><span>${esc(PT('addCat','＋ 新增分類'))}</span></button>
+    <p class="plabel">${esc(PT('noteCats','文字的分類'))}</p>
+    <div id="cl-n"></div>
+    <button class="btn plain" data-addc="n"><span>${esc(PT('addCat','＋ 新增分類'))}</span></button>
+    ${isNew?'':`<div class="pdanger" id="pdz">
+      <button class="btn plain" id="pclose"><span>${esc(P.status==='closed'?PT('reopen','重新打開'):PT('close','收起來'))}</span></button>
+      <p class="cap sys" style="margin:4px 0 0">${esc(P.status==='closed'?PT('reopenNote','打開後會回到「這個月」最上面'):PT('closeNote','收起來後卡片會從「這個月」拿掉，在「回頭看」裡還找得到'))}</p>
+      <button class="btn plain" id="pdel" style="margin-top:14px"><span style="color:#A3502A">${esc(PT('delete','刪除這個專案'))}</span></button>
+    </div>`}
+    <div class="err" id="e"></div>
+    <div class="row">${btn(tf('ui.close','關起來'),'','id="no"')}${btn(tf('ui.save','存好'),'warm','id="ok"')}</div>`);
+  const E=v.querySelector('#e');
+  v.querySelector('#no').onclick=()=>v.remove();
+  const bindText=(sel,key)=>{const el=v.querySelector(sel);el.oninput=()=>{M[key]=el.value;};};
+  bindText('#pn','name');bindText('#pd','note');bindText('#ps','startDate');bindText('#pe','endDate');
+
+  const row=(k,c,i)=>{
+    const n=count(k,c.id);
+    const moving=M.moving&&M.moving.k===k&&M.moving.id===c.id;
+    const others=M[k].filter(x=>x.id!==c.id);
+    return `<div class="crow ${c.hidden?'hid':''}">
+      <div class="field"><input data-cn="${k}:${i}" maxlength="30" value="${esc(c.name)}" placeholder="${esc(PT('catHint','分類名稱'))}"></div>
+      <div class="cbtns">
+        <span class="cnum">${n||''}</span>
+        <button class="cb" data-up="${k}:${i}" ${i===0?'disabled':''}>↑</button>
+        <button class="cb" data-dn="${k}:${i}" ${i===M[k].length-1?'disabled':''}>↓</button>
+        ${k==='n'?`<button class="cb ${c.notify?'on':''}" data-nt="${i}">${esc(PT('notify','通知'))}</button>`:''}
+        <button class="cb" data-hd="${k}:${i}">${esc(c.hidden?PT('show','顯示'):PT('hide','藏'))}</button>
+        <button class="cb del" data-rm="${k}:${i}">✕</button>
+      </div>
+      ${moving?`<div class="cmove">
+        <p class="cap sys" style="margin:0">${esc(PT('moveAsk','裡面有 {n} 個，要搬去哪一個分類？',{n}))}</p>
+        ${others.length?`<div class="choices">${others.map(o=>`<button class="chip" data-mv="${k}:${esc(o.id)}">${esc(o.name||'—')}</button>`).join('')}
+          <button class="chip" data-mvx="1">${esc(PT('cancel','算了'))}</button></div>`
+          :`<p class="cap sys" style="margin:6px 0 0">${esc(PT('moveNone','要先有另一個分類才能搬。不想看到它，可以按「藏」'))}</p>`}
+      </div>`:''}
+    </div>`;
+  };
+  const draw=()=>{
+    ['p','n'].forEach(k=>{
+      const el=v.querySelector('#cl-'+k);
+      el.innerHTML=M[k].length?M[k].map((c,i)=>row(k,c,i)).join('')
+        :`<p class="cap sys" style="margin:4px 0">${esc(PT('noCat','還沒有'))}</p>`;
+      paintFields(el);
+    });
+    const ki=s=>{const [k,i]=s.split(':');return [k,Number(i)];};
+    v.querySelectorAll('[data-cn]').forEach(el=>el.oninput=()=>{const [k,i]=ki(el.dataset.cn);M[k][i].name=el.value;});
+    v.querySelectorAll('[data-up]').forEach(b=>b.onclick=()=>{const [k,i]=ki(b.dataset.up);
+      if(i>0){const a=M[k];[a[i-1],a[i]]=[a[i],a[i-1]];draw();}});
+    v.querySelectorAll('[data-dn]').forEach(b=>b.onclick=()=>{const [k,i]=ki(b.dataset.dn);
+      const a=M[k];if(i<a.length-1){[a[i+1],a[i]]=[a[i],a[i+1]];draw();}});
+    v.querySelectorAll('[data-nt]').forEach(b=>b.onclick=()=>{const c=M.n[Number(b.dataset.nt)];c.notify=!c.notify;draw();});
+    v.querySelectorAll('[data-hd]').forEach(b=>b.onclick=()=>{const [k,i]=ki(b.dataset.hd);M[k][i].hidden=!M[k][i].hidden;draw();});
+    v.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{
+      const [k,i]=ki(b.dataset.rm);const c=M[k][i];
+      if(!count(k,c.id)){M[k].splice(i,1);M.moving=null;draw();return;}
+      M.moving={k,id:c.id};draw();
+    });
+    v.querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>{
+      const k=b.dataset.mv.slice(0,1),to=b.dataset.mv.slice(2),from=M.moving.id;
+      // 之前搬進這個分類的，也一起改搬到新的地方，不然後端會找不到落腳處
+      Object.keys(M.moves[k]).forEach(x=>{if(M.moves[k][x]===from)M.moves[k][x]=to;});
+      M.moves[k][from]=to;
+      M[k]=M[k].filter(x=>x.id!==from);M.moving=null;draw();
+    });
+    v.querySelectorAll('[data-mvx]').forEach(b=>b.onclick=()=>{M.moving=null;draw();});
+  };
+  draw();
+  v.querySelectorAll('[data-addc]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.addc;M[k].push(k==='n'?{id:newCatId(),name:'',hidden:false,notify:false}:{id:newCatId(),name:'',hidden:false});
+    draw();
+    const ins=v.querySelectorAll(`#cl-${k} input[data-cn]`);if(ins.length)ins[ins.length-1].focus();
+  });
+
+  // 新專案：可以沿用之前某個專案的分類
+  if(isNew){
+    let list=S.plist;
+    if(!list){try{list=await api('listProjects',{});S.plist=list;}catch(e){list=[];}}
+    const usable=(list||[]).filter(p=>(p.photoCats||[]).length||(p.noteCats||[]).length);
+    if(usable.length){
+      const tp=v.querySelector('#tpl');
+      tp.innerHTML=`<p class="plabel">${esc(PT('template','沿用之前的分類'))}</p>
+        <div class="choices">${usable.map(p=>`<button class="chip" data-tp="${esc(p.id)}">${esc(p.name)}</button>`).join('')}</div>`;
+      tp.querySelectorAll('[data-tp]').forEach(b=>b.onclick=()=>{
+        const src=usable.filter(p=>p.id===b.dataset.tp)[0];if(!src)return;
+        M.p=(src.photoCats||[]).filter(c=>!c.hidden).map(c=>({id:newCatId(),name:c.name,hidden:false}));
+        M.n=(src.noteCats||[]).filter(c=>!c.hidden).map(c=>({id:newCatId(),name:c.name,hidden:false,notify:!!c.notify}));
+        tp.querySelectorAll('[data-tp]').forEach(x=>x.classList.toggle('on',x===b));
+        draw();
+      });
+    }
+  }
+
+  if(!isNew){
+    v.querySelector('#pclose').onclick=async()=>{
+      try{
+        const next=P.status==='closed'?'open':'closed';
+        await saveProjectWith(P,{status:next});
+        v.remove();await reloadProject();refresh().catch(()=>{});
+      }catch(e){E.textContent=e.message;}
+    };
+    v.querySelector('#pdel').onclick=()=>{
+      const z=v.querySelector('#pdz');
+      z.innerHTML=`<p class="note" style="margin-top:0">${esc(PT('deleteNote','刪除後兩個人都看不到這個專案，裡面的照片和文字也一起不見。真的要刪嗎？'))}</p>
+        <div class="row" style="margin-top:12px">${btn(PT('cancel','算了'),'','id="dno"')}${btn(PT('deleteYes','刪除'),'danger','id="dyes"')}</div>`;
+      paintButtons(z);
+      z.querySelector('#dno').onclick=()=>{v.remove();panelProjectEdit(P);};
+      z.querySelector('#dyes').onclick=async()=>{
+        const y=z.querySelector('#dyes');y.disabled=true;
+        try{
+          await api('deleteProject',{id:P.id,confirm:'yes'});
+          v.remove();S.tab='month';S.pid=null;S.proj=null;S.plist=null;await refresh();
+        }catch(e){y.disabled=false;E.textContent=e.message;}
+      };
+    };
+  }
+
+  const ok=v.querySelector('#ok');
+  ok.onclick=async()=>{
+    if(!M.name.trim()){E.textContent=PT('needName','專案要有名字');return;}
+    if(M.moving){E.textContent=PT('pickMove','還有一個分類沒選要搬去哪');return;}
+    const clean=a=>a.filter(c=>c.name.trim());
+    ok.disabled=true;E.innerHTML='<span class="spin"></span>';
+    try{
+      const body={name:M.name,note:M.note,startDate:M.startDate,endDate:M.endDate,
+        photoCats:clean(M.p),noteCats:clean(M.n),movePhotos:M.moves.p,moveNotes:M.moves.n};
+      if(isNew){
+        const r=await api('saveProject',body);
+        v.remove();S.plist=null;
+        await openProject(r.id);refresh().catch(()=>{});
+      }else{
+        await saveProjectWith(P,body);
+        v.remove();S.plist=null;await reloadProject();refresh().catch(()=>{});
+      }
+    }catch(e){ok.disabled=false;E.textContent=e.message;}
+  };
+}
+
+/* ══════════════════════════════════════════
    加到主畫面．推播
    ══════════════════════════════════════════ */
 let deferredInstall=null;
@@ -2180,7 +2928,7 @@ const CACHE='jo.cache.open';
 function soakOpen(o){
   S.user=o.user;S.partner=o.partner;S.stamps=o.stamps;S.stampSets=o.stampSets;
   S.copy=o.copy;S.settings=o.settings;S.view=o.month;S.pending=o.pending||[];
-  S.months=o.months||[];S.unseen=o.unseen||[];
+  S.months=o.months||[];S.unseen=o.unseen||[];S.projects=o.projects||[];
   try{localStorage.setItem(CACHE,JSON.stringify(o));}catch(e){}
 }
 

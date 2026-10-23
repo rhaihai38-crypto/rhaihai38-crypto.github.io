@@ -243,6 +243,11 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 .pcard b{font-weight:normal;font-size:1.02rem}
 .pcard em{font-style:normal;font-family:var(--ledger);font-size:.72rem;color:var(--ink-soft)}
 .pcard i{font-style:normal;margin-left:auto;color:var(--ink-faint)}
+.pcard.has{padding:10px 14px 10px 10px}
+.pcard.has span{align-items:center}
+.pcov{width:54px;height:54px;flex:none;object-fit:cover;border-radius:3px;
+  background:rgba(122,147,163,.12);opacity:0;transition:opacity .4s ease}
+.pcov.in{opacity:1}
 .psec{margin-top:26px;position:relative;z-index:1}
 .psec-h{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
 .psec-h h2{font-size:1.2rem}
@@ -304,6 +309,18 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 .cmt-new{display:flex;align-items:flex-end;gap:8px;margin-top:6px}
 .cmt-new .field{flex:1}
 .qacts{display:flex;gap:9px;flex-wrap:wrap;margin-top:8px}
+.pvwrap{position:relative}
+.pvnav{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:36px;height:36px;
+  border-radius:50%;background:rgba(250,246,236,.86);font-size:1.4rem;line-height:1;color:var(--ink-soft)}
+.pvnav.l{left:7px}.pvnav.r{right:7px}
+.pvcount{position:absolute;left:9px;top:9px;z-index:2;font-family:var(--ledger);font-size:.66rem;
+  color:var(--ink-soft);background:rgba(250,246,236,.86);padding:1px 8px;border-radius:999px}
+/* 左右滑換張時，不要每一張都從下面滑上來 */
+.veil.still,.veil.still .panel{animation:none}
+.qfails{display:flex;flex-direction:column;gap:6px;margin:8px 0 2px}
+.qf{display:flex;align-items:center;gap:10px}
+.qf img{width:40px;height:40px;object-fit:cover;border-radius:3px;flex:none;background:rgba(0,0,0,.05)}
+.qf span{font-family:var(--ledger);font-size:.68rem;line-height:1.5;color:#A3502A;word-break:break-all}
 .door{position:relative;text-align:left;padding:15px 18px;min-height:0}
 .door span{position:relative;z-index:1;font-size:1rem}
 .door svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
@@ -658,7 +675,7 @@ function vignette(kind){
    API
    ══════════════════════════════════════════ */
 /* 版本標記。設定面板最下面會顯示，用來確認手機上跑的是哪一版。 */
-const BUILD='2026-10-16 · 照片留言';
+const BUILD='2026-10-20 · 專案封面';
 
 const LS={url:'jo.url',token:'jo.token',seen:'jo.welcomed',fgSys:'jo.fgSystem'};
 const BAKED=(typeof API_URL!=='undefined'&&API_URL)?API_URL:'';
@@ -1064,8 +1081,8 @@ function renderMonth(){
     <button class="lookbtn" id="look"><span>${esc(t('look.btn'))}</span>${
       (S.unseen&&S.unseen.length)?`<em>${S.unseen.length}</em>`:''}</button>
     ${(!past&&(S.projects||[]).length)?`<div class="pcards">${S.projects.map(p=>
-      `<button class="btn door pcard" data-proj="${esc(p.id)}"><svg preserveAspectRatio="none"></svg>
-        <span><b>${esc(p.name)}</b>${pRange(p)?`<em>${esc(pRange(p))}</em>`:''}<i>›</i></span></button>`).join('')}</div>`:''}
+      `<button class="btn door pcard ${p.coverPhotoId?'has':''}" data-proj="${esc(p.id)}"><svg preserveAspectRatio="none"></svg>
+        <span>${p.coverPhotoId?`<img class="pcov" data-tid="${esc(p.coverPhotoId)}" alt="">`:''}<b>${esc(p.name)}</b>${pRange(p)?`<em>${esc(pRange(p))}</em>`:''}<i>›</i></span></button>`).join('')}</div>`:''}
 
     <div class="rule" id="r1"></div>
 
@@ -1733,6 +1750,7 @@ function render(){
   });
   app.querySelectorAll('[data-proj]').forEach(b=>b.onclick=()=>openProject(b.dataset.proj));
   if(S.tab==='proj')bindProject(app);
+  else if(app.querySelector('.pcov'))watchThumbs(app);
   app.querySelectorAll('.tossed').forEach(el=>{
     const svg=el.querySelector('svg');
     const draw=()=>{const w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;
@@ -1885,6 +1903,86 @@ function panel(html){
   return v;
 }
 
+/* ── 照片之間左右滑 ──
+   順序就是牆上看到的順序：有篩選，就只在篩選後的照片裡滑。
+   只在照片上滑才換張，滑面板其他地方還是上下捲。 */
+function photoOrder(attr){
+  const key=attr==='data-pid'?'pid':'ppid';
+  return [...document.querySelectorAll('#app ['+attr+']')].map(el=>el.dataset[key]);
+}
+function attachNav(v,ids,id,go,canLeave,prefetch){
+  const i=ids.indexOf(id);if(i<0||ids.length<2)return;
+  const im=v.querySelector('.preview');if(!im)return;
+  const wrap=document.createElement('div');wrap.className='pvwrap';
+  im.parentNode.insertBefore(wrap,im);wrap.appendChild(im);
+  wrap.insertAdjacentHTML('beforeend',
+    (i>0?'<button class="pvnav l" aria-label="上一張">‹</button>':'')+
+    (i<ids.length-1?'<button class="pvnav r" aria-label="下一張">›</button>':'')+
+    `<span class="pvcount">${i+1} / ${ids.length}</span>`);
+  let busy=false;
+  const move=async d=>{
+    const j=i+d;if(busy||j<0||j>=ids.length)return;
+    busy=true;
+    if(canLeave&&!(await canLeave())){busy=false;return;}
+    v.remove();go(ids[j]);
+  };
+  const l=wrap.querySelector('.pvnav.l'),r=wrap.querySelector('.pvnav.r');
+  if(l)l.onclick=e=>{e.stopPropagation();move(-1);};
+  if(r)r.onclick=e=>{e.stopPropagation();move(1);};
+  let x0=null,y0=0;
+  wrap.addEventListener('touchstart',e=>{const t=e.touches[0];x0=t.clientX;y0=t.clientY;},{passive:true});
+  wrap.addEventListener('touchend',e=>{
+    if(x0===null)return;
+    const t=e.changedTouches[0],dx=t.clientX-x0,dy=t.clientY-y0;x0=null;
+    if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.4)move(dx<0?1:-1);
+  },{passive:true});
+  const key=e=>{
+    if(!document.body.contains(v)){document.removeEventListener('keydown',key);return;}
+    if(e.target&&e.target.matches&&e.target.matches('textarea,input'))return;
+    if(e.key==='ArrowLeft')move(-1);
+    if(e.key==='ArrowRight')move(1);
+  };
+  document.addEventListener('keydown',key);
+  // 前後兩張先載好，滑過去才不用等
+  if(prefetch)[ids[i-1],ids[i+1]].forEach(x=>{if(x)prefetch(x).catch(()=>{});});
+}
+
+/* ── 存到手機 ──
+   iPhone 會跳出分享選單，選「儲存影像」就進相簿；Android 和電腦直接下載。
+   存下來的是 app 裡的版本（長邊 1800），不是手機相簿裡的原檔。 */
+function dataUrlToFile(url,name){
+  const parts=url.split(','),mime=(/data:([^;]+)/.exec(parts[0])||[])[1]||'image/jpeg';
+  const bin=atob(parts[1]),u8=new Uint8Array(bin.length);
+  for(let k=0;k<bin.length;k++)u8[k]=bin.charCodeAt(k);
+  return new File([u8],name,{type:mime});
+}
+function saveName(p){
+  return 'OJbook_'+(String(p.takenAt||'').slice(0,10)||'photo')+'_'+(p.owner||'')+'.jpg';
+}
+function saveBtn(){
+  return `<button class="btn plain" id="psave"><span>${esc(tf('photo.save','↓ 存到手機'))}</span></button>`;
+}
+function bindSave(v,p,urlPromise){
+  const b=v.querySelector('#psave');if(!b)return;
+  const lab=b.querySelector('span'),txt=lab.textContent;
+  let url=null;
+  b.disabled=true;lab.textContent=tf('photo.saving','準備中…');
+  urlPromise.then(u=>{url=u;}).catch(()=>{}).then(()=>{b.disabled=!url;lab.textContent=txt;});
+  b.onclick=async()=>{
+    if(!url)return;
+    const f=dataUrlToFile(url,saveName(p));
+    // 分享選單一定要在「按下去的當下」叫出來，前面不能先等任何東西，iPhone 才肯開
+    if(navigator.canShare&&navigator.canShare({files:[f]})){
+      try{await navigator.share({files:[f]});return;}
+      catch(e){if(e&&e.name==='AbortError')return;}
+    }
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(f);a.download=f.name;
+    document.body.appendChild(a);a.click();
+    setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},5000);
+  };
+}
+
 /** 刪掉之前先問一次。 */
 function confirmDelete(kind,onYes){
   const note=kind==='photo'?t('delete.photo'):t('delete.note');
@@ -1991,9 +2089,9 @@ function findPhoto(id){
   return all.filter(p=>p.id===id)[0];
 }
 
-async function openPhoto(id){
+async function openPhoto(id,opts){
   const p=findPhoto(id);if(!p)return;
-  if(!S.imgCache[id]){try{await getPhoto(id);}catch(e){}}
+  // 先開面板，圖到了再補上 —— 左右滑的時候才不會中間空一下
   const mine=p.owner===S.user;
   let kind=p.kind||'self', priv=(p.visibility==='private');
 
@@ -2007,8 +2105,7 @@ async function openPhoto(id){
       ${p.caption?`<p class="cap" style="margin-top:0">${esc(p.caption)}</p>`
         :`<p class="cap sys" style="margin-top:0">${esc(t('caption.none'))}</p>`}
       ${p.isLate?`<p class="cap sys">${esc(t('late.note'))}</p>`:''}
-      ${mine?`<div style="margin-top:14px">
-        <button class="btn plain" id="toedit"><span>${esc(t('edit.title'))}</span></button></div>`:''}
+      <div class="pacts">${mine?`<button class="btn plain" id="toedit"><span>${esc(t('edit.title'))}</span></button>`:''}${saveBtn()}</div>
     </div>
 
     <div id="editbox" class="hide">
@@ -2030,9 +2127,19 @@ async function openPhoto(id){
     <div class="err" id="e"></div>
     <div class="row">${btn(tf('ui.close','關起來'),'','id="no"')}${mine?btn(tf('ui.save','存好'),'warm hide','id="ok"'):''}</div>`);
 
+  if(opts&&opts.still)v.classList.add('still');
   bindStamps(v);
+  const full=S.imgCache[id]?Promise.resolve(S.imgCache[id]):getPhoto(id);
+  full.then(u=>{const im=v.querySelector('.preview');if(im&&u&&!im.getAttribute('src'))im.src=u;}).catch(()=>{});
+  bindSave(v,p,full);
   const view=v.querySelector('#view'), box=v.querySelector('#editbox'),
         ok=v.querySelector('#ok');
+  attachNav(v,photoOrder('data-pid'),id,nid=>openPhoto(nid,{still:true}),async()=>{
+    if(!box.classList.contains('hide')){
+      v.querySelector('#e').textContent=tf('photo.editing','正在改這張，先存好或關起來再換下一張');return false;
+    }
+    return true;
+  },x=>S.imgCache[x]?Promise.resolve():getPhoto(x));
   v.querySelector('#no').onclick=()=>v.remove();
 
   const toedit=v.querySelector('#toedit');
@@ -2223,12 +2330,10 @@ function bindProject(app){
   watchThumbs(app);
   app.querySelectorAll('[data-pc]').forEach(b=>b.onclick=()=>{S.pcat=b.dataset.pc;render();});
   app.querySelectorAll('[data-pw]').forEach(b=>b.onclick=()=>{S.pwho=b.dataset.pw;render();});
-  const qw=app.querySelector('#qwalk');if(qw)qw.onclick=()=>panelWalk(Q.mine.slice(),0);
-  const qd=app.querySelector('#qdone');if(qd)qd.onclick=()=>{Q.total=0;Q.mine=[];render();};
+  bindQueue(app);
   app.querySelectorAll('[data-nc]').forEach(b=>b.onclick=()=>{S.ncat=b.dataset.nc;render();});
   const pe=app.querySelector('#pedit');if(pe)pe.onclick=()=>panelProjectEdit(S.proj.project);
   const pa=app.querySelector('#padd');if(pa)pa.onclick=()=>panelProjectUpload();
-  const rq=app.querySelector('#qretry');if(rq)rq.onclick=()=>retryFailed();
   app.querySelectorAll('[data-pnote]').forEach(b=>b.onclick=()=>panelProjectNote(b.dataset.pnote,null));
   app.querySelectorAll('[data-pnedit]').forEach(b=>b.onclick=()=>{
     const q=S.proj.notes.filter(x=>x.id===b.dataset.pnedit)[0];if(q)panelProjectNote(q.projectCat,q);
@@ -2382,35 +2487,68 @@ function prepare(file){
   });
 }
 
-/* ── 上傳佇列 ── */
+/* ── 上傳佇列 ──
+   一次選很多張時，失敗通常是這三種：
+   ・手機同時解好幾張大照片，記憶體不夠 → 解碼一次只做一張
+   ・Google 那邊一時太忙、網路晃一下 → 失敗了先等一下再試，越等越久
+   ・其實傳上去了，只是回應在路上斷掉 → 每張帶識別碼，重傳時後端認得出來，不會變兩張
+   真的放棄的，列出是哪幾張、為什麼。原因不能藏起來。 */
+const RETRY={par:2,wait:[2000,5000,12000,25000]};
 const Q={items:[],running:0,done:0,fail:[],total:0,pid:null,mine:[]};
-let qTick=0,wakeLock=null;
+let qTick=0,wakeLock=null,decoding=Promise.resolve();
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function newUploadKey(){return Date.now().toString(36)+Math.random().toString(36).slice(2,10);}
+
+/** 解碼排隊：前一張解完才解下一張。上傳本身可以同時兩張 */
+function decodeOne(file){
+  const run=decoding.then(()=>prepare(file));
+  decoding=run.catch(()=>{});
+  return run;
+}
 
 function queueBar(){
   if(!Q.total||Q.pid!==S.pid)return '';
   const left=Q.total-Q.done-Q.fail.length;
-  if(left>0)return `<div class="pqueue"><div class="bar"><i style="width:${Math.round(Q.done/Q.total*100)}%"></i></div>
-    <p class="cap sys">${esc(PT('uploading','上傳中 {done} / {total}　請不要關掉 app',{done:Q.done,total:Q.total}))}</p></div>`;
-  if(Q.fail.length)return `<div class="pqueue"><p class="cap sys">${esc(PT('failed','有 {n} 張沒傳上去',{n:Q.fail.length}))}</p>
-    ${btn(PT('retry','再試一次'),'small','id="qretry"')}</div>`;
+  if(left>0){
+    const again=Q.items.filter(x=>x.tries).length+(Q.waiting||0);
+    return `<div class="pqueue"><div class="bar"><i style="width:${Math.round(Q.done/Q.total*100)}%"></i></div>
+    <p class="cap sys">${esc(PT('uploading','上傳中 {done} / {total}　請不要關掉 app',{done:Q.done,total:Q.total}))}${
+      again?`　${esc(PT('retrying','{n} 張等一下再試',{n:again}))}`:''}</p></div>`;
+  }
+  if(Q.fail.length)return `<div class="pqueue">
+    <p class="cap sys">${esc(PT('failed','有 {n} 張沒傳上去',{n:Q.fail.length}))}${
+      Q.done?`　${esc(PT('failedOk','其他 {n} 張都好了',{n:Q.done}))}`:''}</p>
+    <div class="qfails">${Q.fail.map(it=>`<div class="qf"><img src="${it.prev||''}" alt=""><span>${esc(it.err||'')}</span></div>`).join('')}</div>
+    <div class="qacts">${btn(PT('retry','再試一次'),'warm small','id="qretry"')}${btn(PT('drop','不要了'),'small','id="qdrop"')}</div></div>`;
   if(Q.mine.length)return `<div class="pqueue"><p class="cap sys">${esc(PT('uploaded','傳好 {n} 張',{n:Q.mine.length}))}</p>
     <div class="qacts">${btn(PT('walk','一張一張補幾句'),'warm small','id="qwalk"')}${btn(PT('walkNo','不用了'),'small','id="qdone"')}</div></div>`;
   return '';
 }
+function bindQueue(root){
+  const on=(sel,fn)=>{const b=root.querySelector(sel);if(b)b.onclick=fn;};
+  on('#qretry',()=>retryFailed());
+  on('#qdrop',()=>{Q.fail.forEach(it=>{if(it.prev)URL.revokeObjectURL(it.prev);});
+    Q.total-=Q.fail.length;Q.fail=[];if(!Q.mine.length)Q.total=0;render();});
+  on('#qwalk',()=>panelWalk(Q.mine.slice(),0));
+  on('#qdone',()=>{Q.total=0;Q.mine=[];render();});
+}
+function startWorkers(){
+  keepAwake(true);
+  for(let i=Q.running;i<RETRY.par;i++)worker();
+}
 function enqueue(files,cat){
   if(Q.pid!==S.pid||Q.done+Q.fail.length>=Q.total){Q.items=[];Q.done=0;Q.fail=[];Q.total=0;Q.mine=[];}
   Q.pid=S.pid;
-  files.forEach(f=>Q.items.push({file:f,cat,pid:S.pid,tries:0}));
+  files.forEach(f=>Q.items.push({file:f,cat,pid:S.pid,tries:0,key:newUploadKey()}));
   Q.total+=files.length;
-  keepAwake(true);
-  for(let i=Q.running;i<3;i++)worker();
+  startWorkers();
   render();
 }
 function retryFailed(){
   const f=Q.fail.splice(0);
+  // 識別碼保留：如果上一次其實有傳上去，後端會直接認出來
   f.forEach(it=>{it.tries=0;Q.items.push(it);});
-  keepAwake(true);
-  for(let i=Q.running;i<3;i++)worker();
+  startWorkers();
   render();
 }
 async function worker(){
@@ -2418,8 +2556,21 @@ async function worker(){
   try{
     while(Q.items.length){
       const it=Q.items.shift();
-      try{await sendOne(it);Q.done++;}
-      catch(e){it.tries++;it.err=e.message;if(it.tries<3)Q.items.push(it);else Q.fail.push(it);}
+      try{
+        await sendOne(it);Q.done++;
+        if(it.prev){URL.revokeObjectURL(it.prev);it.prev=null;}
+      }catch(e){
+        it.tries++;it.err=e.message||String(e);
+        if(it.tries<=RETRY.wait.length){
+          Q.waiting=(Q.waiting||0)+1;softRender(false);
+          await sleep(RETRY.wait[it.tries-1]);
+          Q.waiting--;Q.items.push(it);
+        }else{
+          it.img=null;  // 放棄了就不要再佔記憶體
+          try{it.prev=URL.createObjectURL(it.file);}catch(_){}
+          Q.fail.push(it);
+        }
+      }
       softRender(false);
     }
   }finally{
@@ -2428,16 +2579,21 @@ async function worker(){
   }
 }
 async function sendOne(it){
-  const takenAt=await takenAtOf(it.file);
-  const img=await prepare(it.file);
-  const r=await api('uploadPhoto',{projectId:it.pid,projectCat:it.cat,
-    dataBase64:img.b64,mimeType:'image/jpeg',thumbBase64:img.tb64,takenAt});
-  const u='data:image/jpeg;base64,'+img.tb64;
+  // 解一次就留著，重試時不用再解
+  if(!it.img){
+    it.takenAt=await takenAtOf(it.file);
+    it.img=await decodeOne(it.file);
+  }
+  const r=await api('uploadPhoto',{projectId:it.pid,projectCat:it.cat,uploadKey:it.key,
+    dataBase64:it.img.b64,mimeType:'image/jpeg',thumbBase64:it.img.tb64,takenAt:it.takenAt});
+  const u='data:image/jpeg;base64,'+it.img.tb64;
+  it.img=null;
   S.thumbCache[r.photo.id]=u;
   const store=await photoStore();
   if(store){try{await store.put('/thumb/'+r.photo.id,new Response(u));}catch(e){}}
-  if(S.proj&&S.proj.project&&S.proj.project.id===it.pid)S.proj.photos.push(r.photo);
-  Q.mine.push(r.photo.id);
+  if(S.proj&&S.proj.project&&S.proj.project.id===it.pid&&!S.proj.photos.some(p=>p.id===r.photo.id))
+    S.proj.photos.push(r.photo);
+  if(Q.mine.indexOf(r.photo.id)<0)Q.mine.push(r.photo.id);
 }
 /** 進度條就地更新；每十二張、還有全部傳完時，才整頁重畫 */
 function softRender(end){
@@ -2449,9 +2605,10 @@ function softRender(end){
   const html=queueBar();
   if(!html){el.remove();return;}
   el.outerHTML=html;
-  paintButtons();
-  const rq=document.querySelector('#qretry');if(rq)rq.onclick=()=>retryFailed();
+  const nw=document.querySelector('.pqueue');
+  if(nw){paintButtons(nw);bindQueue(nw);}
 }
+
 /** 傳的時候讓螢幕不要暗掉。支援的瀏覽器才有，不支援就算了 */
 async function keepAwake(on){
   try{
@@ -2486,10 +2643,10 @@ function panelProjectUpload(){
 /* ── 面板：看一張照片 ──
    說明只有放照片的人能寫，點開就是輸入框，不用先按「改」。
    底下是留言，兩個人都可以寫，像一段對話。 */
-function panelProjectPhoto(id){
+function panelProjectPhoto(id,opts){
   const P=S.proj.project,p=S.proj.photos.filter(x=>x.id===id)[0];if(!p)return;
   const mine=p.owner===S.user,cats=visCats(P.photoCats);
-  let cat=p.projectCat,dirty=false;
+  let cat=p.projectCat,dirty=!!(opts&&opts.dirty);
   const isCover=P.coverPhotoId===id;
   const v=panel(`<img class="preview" id="pv" src="${S.thumbCache[id]||''}" alt="">
     <p class="cap sys pmeta">${whoTag(p.owner)}<span>${esc([catName(P.photoCats,p.projectCat),pDate(p.takenAt)].filter(Boolean).join('　'))}</span></p>
@@ -2505,6 +2662,7 @@ function panelProjectPhoto(id){
     <div class="pacts">
       ${isCover?`<span class="cap sys" style="margin:0">${esc(PT('isCover','這張是封面'))}</span>`
         :`<button class="btn plain" id="cover"><span>${esc(PT('setCover','設成封面'))}</span></button>`}
+      ${saveBtn()}
       ${mine?`<button class="btn plain" id="more"><span>${esc(PT('more','換分類・刪除'))}</span></button>`:''}
     </div>
     ${mine?`<div id="morebox" class="hide">
@@ -2518,8 +2676,11 @@ function panelProjectPhoto(id){
   v.onclick=e=>{if(e.target===v)close();};
   v.querySelector('.x').onclick=close;
   v.querySelector('#no').onclick=close;
+  if(opts&&opts.still)v.classList.add('still');
   bindStamps(v);
-  getFull(id).then(u=>{const im=v.querySelector('#pv');if(im&&u)im.src=u;}).catch(()=>{});
+  const full=getFull(id);
+  full.then(u=>{const im=v.querySelector('#pv');if(im&&u)im.src=u;}).catch(()=>{});
+  bindSave(v,p,full);
 
   // 說明：有改才出現「存好」
   const cap=v.querySelector('#cap'),cs=v.querySelector('#capsave');
@@ -2549,6 +2710,16 @@ function panelProjectPhoto(id){
   };
   drawCmts();
   const cm=v.querySelector('#cm'),cms=v.querySelector('#cms');
+
+  // 左右滑：說明改了沒存，先幫你存；留言打到一半，就不讓你走，免得字不見
+  attachNav(v,photoOrder('data-ppid'),id,nid=>panelProjectPhoto(nid,{still:true,dirty}),async()=>{
+    if(cm.value.trim()){E.textContent=PT('unsent','留言還沒送出');return false;}
+    if(cap&&cap.value!==(p.caption||'')){
+      try{await api('updatePhoto',{id,caption:cap.value});p.caption=cap.value;dirty=true;}
+      catch(e){E.textContent=e.message;return false;}
+    }
+    return true;
+  },x=>getFull(x));
   cms.onclick=async()=>{
     const text=cm.value.trim();if(!text)return;
     cms.disabled=true;E.innerHTML='<span class="spin"></span>';
@@ -2564,6 +2735,7 @@ function panelProjectPhoto(id){
   if(cv)cv.onclick=async()=>{
     cv.disabled=true;
     try{await saveProjectWith(P,{coverPhotoId:id});P.coverPhotoId=id;
+      (S.projects||[]).forEach(x=>{if(x.id===P.id)x.coverPhotoId=id;});
       cv.outerHTML=`<span class="cap sys" style="margin:0">${esc(PT('isCover','這張是封面'))}</span>`;}
     catch(e){cv.disabled=false;E.textContent=e.message;}
   };
@@ -2579,6 +2751,11 @@ function panelProjectPhoto(id){
   const del=v.querySelector('#del');
   if(del)del.onclick=()=>confirmDelete('photo',async()=>{
     await api('deletePhoto',{id});
+    // 刪掉的是封面那張：封面一起清掉，卡片才不會留一個空格
+    if(P.coverPhotoId===id){
+      try{await saveProjectWith(P,{coverPhotoId:''});}catch(e){}
+      P.coverPhotoId='';(S.projects||[]).forEach(x=>{if(x.id===P.id)x.coverPhotoId='';});
+    }
     delete S.thumbCache[id];
     const store=await photoStore();
     if(store){try{await store.delete('/thumb/'+id);await store.delete('/photo/'+id);}catch(e){}}

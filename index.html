@@ -309,6 +309,12 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 .cmt-new{display:flex;align-items:flex-end;gap:8px;margin-top:6px}
 .cmt-new .field{flex:1}
 .qacts{display:flex;gap:9px;flex-wrap:wrap;margin-top:8px}
+.manygrid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:2px 0 4px}
+.manygrid img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:2px}
+.manygrid .more{display:flex;align-items:center;justify-content:center;font-family:var(--ledger);
+  font-size:.72rem;color:var(--ink-soft);background:rgba(0,0,0,.04);border-radius:2px}
+.jarnote{display:flex;align-items:center;justify-content:center;gap:14px;margin:12px 0 4px}
+.jarnote .cap{margin:0}
 .pvwrap{position:relative}
 .pvnav{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:36px;height:36px;
   border-radius:50%;background:rgba(250,246,236,.86);font-size:1.4rem;line-height:1;color:var(--ink-soft)}
@@ -675,7 +681,7 @@ function vignette(kind){
    API
    ══════════════════════════════════════════ */
 /* 版本標記。設定面板最下面會顯示，用來確認手機上跑的是哪一版。 */
-const BUILD='2026-10-20 · 專案封面';
+const BUILD='2026-10-30 · 月份多張、只抽對方的籤';
 
 const LS={url:'jo.url',token:'jo.token',seen:'jo.welcomed',fgSys:'jo.fgSystem'};
 const BAKED=(typeof API_URL!=='undefined'&&API_URL)?API_URL:'';
@@ -1080,6 +1086,7 @@ function renderMonth(){
     <p class="cap sys" style="margin:0">${left>0?esc(t('home.quotaLeft',{n:left})):esc(t('home.quotaFull'))}</p>
     <button class="lookbtn" id="look"><span>${esc(t('look.btn'))}</span>${
       (S.unseen&&S.unseen.length)?`<em>${S.unseen.length}</em>`:''}</button>
+    ${queueBar()}
     ${(!past&&(S.projects||[]).length)?`<div class="pcards">${S.projects.map(p=>
       `<button class="btn door pcard ${p.coverPhotoId?'has':''}" data-proj="${esc(p.id)}"><svg preserveAspectRatio="none"></svg>
         <span>${p.coverPhotoId?`<img class="pcov" data-tid="${esc(p.coverPhotoId)}" alt="">`:''}<b>${esc(p.name)}</b>${pRange(p)?`<em>${esc(pRange(p))}</em>`:''}<i>›</i></span></button>`).join('')}</div>`:''}
@@ -1560,7 +1567,7 @@ function renderJar(){
   const j=S.jar||{marbles:0,capacity:5,jarIndex:1,storedJarList:[],myUnusedWishes:0};
   const stored=(j.storedJarList||[]).map(x=>`
     <div class="mini">${jarSVG(j.capacity,j.capacity,900+x.jarIndex,84)}
-      <div class="w">${esc(x.wish||'—')}</div></div>`).join('');
+      <div class="w">${esc(x.wish||(x.owed?tf('jar.owed','還在等籤'):'—'))}</div></div>`).join('');
   const wishes=(S.wishes||[]);
   const drawn=wishes.filter(w=>w.status==='drawn');
   const mineWaiting=wishes.filter(w=>w.mine&&w.status==='unused');
@@ -1580,6 +1587,10 @@ function renderJar(){
       <span class="led">${esc(tf('jar.nth','第 {n} 罐',{n:j.jarIndex}))}</span></div>
     <div class="jarwrap">${jarSVG(j.marbles,j.capacity,j.jarIndex*31,186)}</div>
     <p class="cap sys" style="text-align:center">${esc(t('jar.progress',{n:j.marbles}))} / ${j.capacity}</p>
+    ${j.canDraw?`<div class="jarnote"><p class="cap">${esc(tf('jar.canDraw','有 {n} 罐等你抽籤',{n:j.canDraw}))}</p>
+      ${btn(tf('jar.drawNow','抽籤'),'warm small','id="claim"')}</div>`:''}
+    ${j.waitingTheirs?`<p class="cap sys" style="text-align:center">${esc(tf('jar.waitTheirs','有 {n} 罐在等{who}寫籤',{n:j.waitingTheirs,who:S.partner}))}</p>`:''}
+    ${j.waitingMine?`<p class="cap sys" style="text-align:center">${esc(tf('jar.waitMine','{who}有 {n} 罐在等你的籤',{n:j.waitingMine,who:S.partner}))}</p>`:''}
 
     ${stored?`<section class="sec"><h2>${esc(tf('jar.store','倉庫'))}</h2>
       <p class="cap sys" style="margin:0">${esc(t('jar.stored',{n:j.storedJars}))}</p>
@@ -1750,7 +1761,22 @@ function render(){
   });
   app.querySelectorAll('[data-proj]').forEach(b=>b.onclick=()=>openProject(b.dataset.proj));
   if(S.tab==='proj')bindProject(app);
-  else if(app.querySelector('.pcov'))watchThumbs(app);
+  else{
+    if(app.querySelector('.pcov'))watchThumbs(app);
+    bindQueue(app);
+  }
+  const cl=app.querySelector('#claim');
+  if(cl)cl.onclick=async()=>{
+    cl.disabled=true;
+    try{
+      const r=await api('claimDraw',{});
+      S.jar=null;S.wishes=null;
+      panelJarFilled(r,async()=>{await loadJar();render();});
+    }catch(e){
+      cl.disabled=false;
+      cl.insertAdjacentHTML('afterend',`<p class="cap sys">${esc(e.message)}</p>`);
+    }
+  };
   app.querySelectorAll('.tossed').forEach(el=>{
     const svg=el.querySelector('svg');
     const draw=()=>{const w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;
@@ -1862,9 +1888,10 @@ let pick={file:null,kind:'self',priv:false,dataUrl:''};
 function openPicker(kind,priv){
   pick={file:null,kind:kind||'self',priv:!!priv,dataUrl:''};
   const inp=document.createElement('input');
-  inp.type='file';inp.accept='image/*';
+  inp.type='file';inp.accept='image/*';inp.multiple=true;
   inp.onchange=async()=>{
     if(!inp.files||!inp.files[0])return;
+    if(inp.files.length>1){panelUploadMany([...inp.files]);return;}
     const shrunk=await shrink(inp.files[0]);
     pick.dataUrl=shrunk.dataUrl;pick.b64=shrunk.b64;pick.mime=shrunk.mime;
     panelUpload();
@@ -2070,15 +2097,77 @@ function panelWillful(info){
   };
 }
 
-function panelJarFilled(jar){
+function panelJarFilled(jar,onClose){
   const wish=jar.drawnWish
-    ? `<p class="cap">${esc(t('jar.draw'))}</p>
+    // 試算表裡可以寫 {who}，會換成寫這支籤的人
+    ? `<p class="cap">${esc(t('jar.draw',{who:jar.drawnWish.owner||S.partner}))}</p>
        <p style="font-size:1.15rem;margin:10px 0 0;padding-left:14px;border-left:2px solid var(--ochre)">${esc(jar.drawnWish.text)}</p>`
-    : `<p class="cap sys">${esc(t('wish.empty'))}</p>`;
+    : jar.waiting
+      // 對方還沒寫籤：這一罐先欠著，等對方寫了，再由你自己來抽
+      ? `<p class="cap sys">${esc(tf('jar.waiting','{who}還沒寫籤。這一罐先留著，等{who}寫了，你再來抽。',{who:S.partner}))}</p>`
+      : `<p class="cap sys">${esc(t('wish.empty'))}</p>`;
   const v=panel(`<h3>${esc(t('jar.title'))}</h3>
-    <p class="note">${esc(t('jar.filled'))}</p>${wish}
+    ${jar.claimed?'':`<p class="note">${esc(t('jar.filled'))}</p>`}${wish}
     <div class="row">${btn(tf('ui.ok','好'),'warm','id="ok"')}</div>`);
-  v.querySelector('#ok').onclick=()=>v.remove();
+  v.querySelector('#ok').onclick=()=>{v.remove();if(onClose)onClose();};
+}
+
+/* ── 月份：一次放好幾張 ──
+   先選分類和放哪裡，再一起排隊上傳。超過這個月剩下的格子，
+   多出來的一起任性：說一句理由，每張各投一顆彈珠。 */
+function panelUploadMany(files){
+  const urls=files.map(f=>URL.createObjectURL(f));
+  const free=()=>urls.forEach(u=>URL.revokeObjectURL(u));
+  const chip=(k,l)=>`<button class="chip ${pick.kind===k?'on':''}" data-k="${k}">${esc(l)}</button>`;
+  const v=panel(`<h3>${esc(tf('upload.many','一次放 {n} 張',{n:files.length}))}</h3>
+    <div class="manygrid">${urls.slice(0,11).map(u=>`<img src="${u}" alt="">`).join('')}${
+      files.length>11?`<span class="more">＋${files.length-11}</span>`:''}</div>
+    <div class="choices">${chip('self',t('home.self'))}${chip('us',t('home.us'))}${chip('me',t('home.me'))}</div>
+    <div class="choices" style="margin-top:16px">
+      <button class="chip ${pick.priv?'':'on'}" data-p="0">${esc(t('upload.toBoard'))}</button>
+      <button class="chip ${pick.priv?'on':''}" data-p="1">${esc(t('upload.toHut'))}</button>
+    </div>
+    <div class="err" id="e"></div>
+    <div class="row">${btn(tf('ui.cancel','先不要'),'','id="no"')}${btn(tf('ui.put','放進去'),'warm','id="ok"')}</div>`);
+  v.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{
+    pick.kind=b.dataset.k;v.querySelectorAll('[data-k]').forEach(x=>x.classList.toggle('on',x.dataset.k===pick.kind));
+  });
+  v.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{
+    pick.priv=b.dataset.p==='1';v.querySelectorAll('[data-p]').forEach(x=>x.classList.toggle('on',(x.dataset.p==='1')===pick.priv));
+  });
+  v.querySelector('#no').onclick=()=>{v.remove();free();};
+  v.querySelector('#ok').onclick=()=>{
+    const o={kind:pick.kind,priv:pick.priv,ym:(S.view&&S.view.yearMonth)||undefined};
+    v.remove();free();
+    if(o.priv){enqueueMonth(files,o);return;}           // 小屋沒有格子
+    const q=(S.view&&S.view.quota&&S.view.quota[o.kind])||0;
+    const used=(S.view&&S.view.counts&&S.view.counts[o.kind])||0;
+    const left=Math.max(0,q-used);
+    if(files.length<=left){enqueueMonth(files,o);return;}
+    panelWillfulMany(files,left,o);
+  };
+}
+function panelWillfulMany(files,left,o){
+  const n=files.length,kname=t('home.'+o.kind);
+  const body=left>0
+    ?tf('upload.manyOver','這個月「{kind}」只剩 {left} 格，選了 {n} 張。多出來的 {extra} 張要任性嗎？說一句為什麼，每張投一顆彈珠。',{kind:kname,left,n,extra:n-left})
+    :tf('upload.manyFull','這個月「{kind}」的格子已經滿了，這 {n} 張都要任性嗎？說一句為什麼，每張投一顆彈珠。',{kind:kname,n});
+  const v=panel(`<h3>${esc(t('willful.title'))}</h3>
+    <p class="note">${esc(body)}</p>
+    <div class="field" style="margin-top:8px"><textarea id="why" rows="2" placeholder="${esc(t('willful.placeholder'))}"></textarea></div>
+    ${left>0?`<button class="btn plain" id="fit" style="margin-top:12px"><span>${esc(tf('upload.onlyFit','只放 {n} 張',{n:left}))}</span></button>`:''}
+    <div class="err" id="e"></div>
+    <div class="row">${btn('算了','','id="no"')}${btn(t('willful.confirm'),'warm','id="ok"')}</div>`);
+  v.querySelector('#no').onclick=()=>v.remove();
+  const fit=v.querySelector('#fit');
+  if(fit)fit.onclick=()=>{v.remove();enqueueMonth(files.slice(0,left),o);};
+  v.querySelector('#ok').onclick=()=>{
+    const why=v.querySelector('#why').value.trim();
+    if(!why){v.querySelector('#e').textContent=tf('err.needReason','要說一句為什麼');return;}
+    v.remove();
+    // 每一張都帶著理由送出：放得下的後端不會算任性，放不下的才投彈珠
+    enqueueMonth(files,Object.assign({},o,{willful:true,reason:why}));
+  };
 }
 
 /* ══════════════════════════════════════════
@@ -2494,7 +2583,9 @@ function prepare(file){
    ・其實傳上去了，只是回應在路上斷掉 → 每張帶識別碼，重傳時後端認得出來，不會變兩張
    真的放棄的，列出是哪幾張、為什麼。原因不能藏起來。 */
 const RETRY={par:2,wait:[2000,5000,12000,25000]};
-const Q={items:[],running:0,done:0,fail:[],total:0,pid:null,mine:[]};
+const Q={items:[],running:0,done:0,fail:[],total:0,ctx:'',mine:[],jars:[]};
+/** 佇列屬於哪一頁：專案是 p:專案id，月份是 m:年-月。只有在那一頁才看得到進度條 */
+function qctx(){return S.tab==='proj'?'p:'+S.pid:(S.tab==='month'&&S.view?'m:'+S.view.yearMonth:'');}
 let qTick=0,wakeLock=null,decoding=Promise.resolve();
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function newUploadKey(){return Date.now().toString(36)+Math.random().toString(36).slice(2,10);}
@@ -2507,7 +2598,7 @@ function decodeOne(file){
 }
 
 function queueBar(){
-  if(!Q.total||Q.pid!==S.pid)return '';
+  if(!Q.total||Q.ctx!==qctx())return '';
   const left=Q.total-Q.done-Q.fail.length;
   if(left>0){
     const again=Q.items.filter(x=>x.tries).length+(Q.waiting||0);
@@ -2520,6 +2611,8 @@ function queueBar(){
       Q.done?`　${esc(PT('failedOk','其他 {n} 張都好了',{n:Q.done}))}`:''}</p>
     <div class="qfails">${Q.fail.map(it=>`<div class="qf"><img src="${it.prev||''}" alt=""><span>${esc(it.err||'')}</span></div>`).join('')}</div>
     <div class="qacts">${btn(PT('retry','再試一次'),'warm small','id="qretry"')}${btn(PT('drop','不要了'),'small','id="qdrop"')}</div></div>`;
+  if(Q.mine.length&&Q.ctx.startsWith('m:'))return `<div class="pqueue"><p class="cap sys">${esc(tf('upload.done','傳好 {n} 張',{n:Q.mine.length}))}</p>
+    <div class="qacts">${btn(tf('ui.ok','好'),'small','id="qdone"')}</div></div>`;
   if(Q.mine.length)return `<div class="pqueue"><p class="cap sys">${esc(PT('uploaded','傳好 {n} 張',{n:Q.mine.length}))}</p>
     <div class="qacts">${btn(PT('walk','一張一張補幾句'),'warm small','id="qwalk"')}${btn(PT('walkNo','不用了'),'small','id="qdone"')}</div></div>`;
   return '';
@@ -2536,13 +2629,20 @@ function startWorkers(){
   keepAwake(true);
   for(let i=Q.running;i<RETRY.par;i++)worker();
 }
-function enqueue(files,cat){
-  if(Q.pid!==S.pid||Q.done+Q.fail.length>=Q.total){Q.items=[];Q.done=0;Q.fail=[];Q.total=0;Q.mine=[];}
-  Q.pid=S.pid;
-  files.forEach(f=>Q.items.push({file:f,cat,pid:S.pid,tries:0,key:newUploadKey()}));
-  Q.total+=files.length;
+function enqueueItems(items,ctx){
+  if(Q.ctx!==ctx||Q.done+Q.fail.length>=Q.total){Q.items=[];Q.done=0;Q.fail=[];Q.total=0;Q.mine=[];Q.jars=[];}
+  Q.ctx=ctx;
+  items.forEach(it=>{it.tries=0;it.key=newUploadKey();Q.items.push(it);});
+  Q.total+=items.length;
   startWorkers();
   render();
+}
+function enqueue(files,cat){
+  enqueueItems(files.map(f=>({type:'p',file:f,cat,pid:S.pid})),'p:'+S.pid);
+}
+function enqueueMonth(files,o){
+  enqueueItems(files.map(f=>({type:'m',file:f,kind:o.kind,priv:o.priv,ym:o.ym,
+    willful:!!o.willful,reason:o.reason||''})),'m:'+((S.view&&S.view.yearMonth)||''));
 }
 function retryFailed(){
   const f=Q.fail.splice(0);
@@ -2561,7 +2661,7 @@ async function worker(){
         if(it.prev){URL.revokeObjectURL(it.prev);it.prev=null;}
       }catch(e){
         it.tries++;it.err=e.message||String(e);
-        if(it.tries<=RETRY.wait.length){
+        if(!e.final&&it.tries<=RETRY.wait.length){
           Q.waiting=(Q.waiting||0)+1;softRender(false);
           await sleep(RETRY.wait[it.tries-1]);
           Q.waiting--;Q.items.push(it);
@@ -2579,6 +2679,7 @@ async function worker(){
   }
 }
 async function sendOne(it){
+  if(it.type==='m')return sendMonth(it);
   // 解一次就留著，重試時不用再解
   if(!it.img){
     it.takenAt=await takenAtOf(it.file);
@@ -2595,9 +2696,35 @@ async function sendOne(it){
     S.proj.photos.push(r.photo);
   if(Q.mine.indexOf(r.photo.id)<0)Q.mine.push(r.photo.id);
 }
+async function sendMonth(it){
+  if(!it.img){
+    it.takenAt=await takenAtOf(it.file);
+    it.img=await decodeOne(it.file);
+  }
+  const r=await api('uploadPhoto',{yearMonth:it.ym,kind:it.kind,visibility:it.priv?'private':'shared',
+    caption:'',dataBase64:it.img.b64,mimeType:'image/jpeg',takenAt:it.takenAt,
+    willful:it.willful,reason:it.reason,uploadKey:it.key});
+  if(r.needWillful){
+    // 格子在傳的途中被用完了（例如另一支手機也在傳）。這種重試幾次都一樣，直接列出來
+    const e=new Error(tf('upload.full','這個月的格子已經滿了'));e.final=true;throw e;
+  }
+  S.imgCache[r.photo.id]='data:image/jpeg;base64,'+it.img.b64;
+  it.img=null;
+  if(r.jar&&r.jar.justFilled)Q.jars.push(r.jar);
+  if(Q.mine.indexOf(r.photo.id)<0)Q.mine.push(r.photo.id);
+}
+/** 月份傳完：重新整理這個月，罐子滿了的話一罐一罐揭曉 */
+async function afterMonthBatch(){
+  S.hut=null;S.jar=null;S.wishes=null;
+  try{await refresh();}catch(e){render();}
+  const js=Q.jars.splice(0);
+  const next=()=>{const j=js.shift();if(j)panelJarFilled(j,next);};
+  next();
+}
 /** 進度條就地更新；每十二張、還有全部傳完時，才整頁重畫 */
 function softRender(end){
-  if(S.tab!=='proj')return;
+  if(end&&Q.ctx.startsWith('m:')){afterMonthBatch();return;}
+  if(Q.ctx!==qctx())return;
   qTick++;
   if(end||qTick%12===0){render();return;}
   const el=document.querySelector('.pqueue');

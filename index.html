@@ -422,6 +422,11 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 .ill.sm{width:min(150px,46%);margin:8px 0 0}
 .ill.c{margin-left:auto;margin-right:auto}
 .ill-wrap .cap{margin-top:8px}
+/* 每一頁標題上方常駐的插圖 */
+.hero{display:flex;justify-content:flex-end;margin:-8px -6px -4px 0}
+.hero img{width:min(178px,48%);height:auto;mix-blend-mode:multiply;display:block;
+  user-select:none;-webkit-user-drag:none;pointer-events:none}
+.pqueue .ill{width:min(120px,36%);margin:2px 0 4px}
 
 /* ── 回頭看 ── */
 .lookbtn{position:relative;display:inline-flex;align-items:center;gap:6px;
@@ -660,6 +665,18 @@ function ill(kind,cls){
   return `<img class="ill ${cls||''}" src="./ill-${kind}.webp?v=1" alt="" loading="lazy" decoding="async" onerror="this.remove()">`;
 }
 
+/* 頁首插圖。這個月會依季節換：3–5 春、6–8 夏、9–11 秋、12–2 冬 */
+function hero(kind){
+  return `<div class="hero"><img src="./hd-${kind}.webp?v=1" alt="" decoding="async" onerror="this.parentNode.remove()"></div>`;
+}
+function ill2(kind){
+  return `<img class="ill" src="./hd-${kind}.webp?v=1" alt="" decoding="async" onerror="this.remove()">`;
+}
+function season(ym){
+  const mo=Number(String(ym||'').split('-')[1])||(new Date().getMonth()+1);
+  return mo>=3&&mo<=5?'spring':mo>=6&&mo<=8?'summer':mo>=9&&mo<=11?'autumn':'winter';
+}
+
 function vignette(kind){
   const P=[];
   const add=(pts,closed,base,seed)=>
@@ -699,7 +716,7 @@ function vignette(kind){
    API
    ══════════════════════════════════════════ */
 /* 版本標記。設定面板最下面會顯示，用來確認手機上跑的是哪一版。 */
-const BUILD='2026-11-23 · 歐與均的插圖';
+const BUILD='2026-11-23b · 每頁都有歐與均';
 
 const LS={url:'jo.url',token:'jo.token',seen:'jo.welcomed',fgSys:'jo.fgSystem'};
 const BAKED=(typeof API_URL!=='undefined'&&API_URL)?API_URL:'';
@@ -1093,6 +1110,7 @@ function renderMonth(){
   const left=(q.self-c.self)+(q.us-c.us);
   return `<div class="sheet">
     ${wash(300,210,'#D9A05B',0.13,'wash1')}
+    ${hero(season(v.yearMonth))}
     <div class="head">
       <div class="ymwrap">
         <button class="step" id="prevm" ${prevYm?'':'disabled'}>‹</button>
@@ -1156,6 +1174,7 @@ function renderHut(){
        <p class="cap sys">${esc(t('hut.shareHint'))}</p></div></div>`;
   return `<div class="sheet">
     ${wash(300,210,'#A6BC84',0.13,'wash2')}
+    ${hero('hut')}
     <div class="head"><h1 class="ym">${esc(t('hut.title'))}</h1>
       <button class="who-btn" id="settings">${esc(S.user)}</button></div>
     <div class="rule" id="r1"></div>
@@ -1285,6 +1304,7 @@ function renderQuote(){
 
   return `<div class="sheet">
     ${wash(300,210,'#D9A05B',0.12,'wash2')}
+    ${hero('quote')}
     <div class="head"><h1 class="ym">${esc(t('quote.title'))}</h1>
       <span class="led">${all.length}</span></div>
     <div class="rule" id="r1"></div>
@@ -1602,6 +1622,7 @@ function renderJar(){
 
   return `<div class="sheet">
     ${wash(300,210,'#93B4C6',0.13,'wash1')}
+    ${hero('jar')}
     <div class="head"><h1 class="ym">${esc(t('jar.title'))}</h1>
       <span class="led">${esc(tf('jar.nth','第 {n} 罐',{n:j.jarIndex}))}</span></div>
     <div class="jarwrap">${jarSVG(j.marbles,j.capacity,j.jarIndex*31,186)}</div>
@@ -2416,6 +2437,7 @@ function renderProject(){
   return `<div class="sheet proj">
     ${wash(300,210,'#93B4C6',0.12,'wash2')}
     ${back}
+    ${hero('proj')}
     <div class="head"><h1 class="ym">${esc(P.name)}</h1>
       <span class="led">${P.status==='closed'?esc(PT('closed','收起來了')):''}</span></div>
     ${sub?`<p class="cap sys" style="margin:0">${esc(sub)}</p>`:''}
@@ -2630,9 +2652,9 @@ function queueBar(){
       Q.done?`　${esc(PT('failedOk','其他 {n} 張都好了',{n:Q.done}))}`:''}</p>
     <div class="qfails">${Q.fail.map(it=>`<div class="qf"><img src="${it.prev||''}" alt=""><span>${esc(it.err||'')}</span></div>`).join('')}</div>
     <div class="qacts">${btn(PT('retry','再試一次'),'warm small','id="qretry"')}${btn(PT('drop','不要了'),'small','id="qdrop"')}</div></div>`;
-  if(Q.mine.length&&Q.ctx.startsWith('m:'))return `<div class="pqueue"><p class="cap sys">${esc(tf('upload.done','傳好 {n} 張',{n:Q.mine.length}))}</p>
+  if(Q.mine.length&&Q.ctx.startsWith('m:'))return `<div class="pqueue">${ill2('done')}<p class="cap sys">${esc(tf('upload.done','傳好 {n} 張',{n:Q.mine.length}))}</p>
     <div class="qacts">${btn(tf('ui.ok','好'),'small','id="qdone"')}</div></div>`;
-  if(Q.mine.length)return `<div class="pqueue"><p class="cap sys">${esc(PT('uploaded','傳好 {n} 張',{n:Q.mine.length}))}</p>
+  if(Q.mine.length)return `<div class="pqueue">${ill2('done')}<p class="cap sys">${esc(PT('uploaded','傳好 {n} 張',{n:Q.mine.length}))}</p>
     <div class="qacts">${btn(PT('walk','一張一張補幾句'),'warm small','id="qwalk"')}${btn(PT('walkNo','不用了'),'small','id="qdone"')}</div></div>`;
   return '';
 }

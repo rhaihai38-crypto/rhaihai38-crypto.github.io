@@ -6,7 +6,8 @@
 <meta name="theme-color" content="#FAF6EC">
 <title>OJ book</title>
 <link rel="manifest" href="./manifest.json">
-<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png?v=2">
+<link rel="preload" as="image" href="./splash.webp?v=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="OJ book">
@@ -415,6 +416,12 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 .vig path{fill:var(--ink-faint);stroke:none;fill-rule:evenodd}
 .vig-wrap{display:flex;align-items:flex-end;gap:16px;margin-top:8px}
 .vig-wrap .cap{margin:0}
+/* ── 插圖：歐與均 ── 白底用 multiply 融進紙色 */
+.ill{display:block;width:min(230px,66%);height:auto;mix-blend-mode:multiply;margin:14px 0 2px;
+  user-select:none;-webkit-user-drag:none;pointer-events:none}
+.ill.sm{width:min(150px,46%);margin:8px 0 0}
+.ill.c{margin-left:auto;margin-right:auto}
+.ill-wrap .cap{margin-top:8px}
 
 /* ── 回頭看 ── */
 .lookbtn{position:relative;display:inline-flex;align-items:center;gap:6px;
@@ -439,6 +446,7 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 .rv .m{font-size:1.9rem;line-height:1.5;letter-spacing:.04em}
 .rv .b{font-size:1rem;color:var(--ink-soft);margin-top:6px;line-height:1.8}
 .rv .art{margin:14px auto 6px;width:110px}
+.rv .ill{margin:14px auto 6px;width:min(240px,78%)}
 .rv .art svg{width:100%;height:auto}
 .rv .art path{fill:var(--ink-faint)}
 .grid.reveal .frame{opacity:0;animation:rise2 .7s ease forwards}
@@ -457,6 +465,10 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 
 /* ── 開場 ── */
 .gate{width:var(--sheet);margin:0 auto;padding:16vh 26px 60px;min-height:100vh}
+/* 開場的插圖：歐與均走在路上。下方留出插圖的高度，文字不會壓到 */
+.gate.art{background:url(./splash.webp?v=1) center bottom/100% auto no-repeat;
+  padding-bottom:calc(min(100vw,480px)*.72)}
+.gate .ill{margin:0 0 18px -6px}
 .gate h1{font-size:1.7rem;margin-bottom:20px;letter-spacing:.03em}
 .gate .letter{font-size:1.02rem;line-height:2.05;margin-bottom:30px}
 .gate .letter p{margin:0 0 16px}
@@ -470,7 +482,7 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 </head>
 <body>
 
-<div id="app"><div class="gate"><p class="led">開啟中 <span class="spin"></span></p></div></div>
+<div id="app"><div class="gate art"><p class="led">開啟中 <span class="spin"></span></p></div></div>
 
 <script>
 /* ══════════════════════════════════════════
@@ -642,6 +654,12 @@ function densify(pts,closed,per){
   return out;
 }
 
+/* 插圖：歐（河狸）與均（鷸鳥）。檔案和 index.html 放在同一層。
+   讀不到圖就安靜地拿掉，不留破圖。 */
+function ill(kind,cls){
+  return `<img class="ill ${cls||''}" src="./ill-${kind}.webp?v=1" alt="" loading="lazy" decoding="async" onerror="this.remove()">`;
+}
+
 function vignette(kind){
   const P=[];
   const add=(pts,closed,base,seed)=>
@@ -681,7 +699,7 @@ function vignette(kind){
    API
    ══════════════════════════════════════════ */
 /* 版本標記。設定面板最下面會顯示，用來確認手機上跑的是哪一版。 */
-const BUILD='2026-10-30 · 月份多張、只抽對方的籤';
+const BUILD='2026-11-23 · 歐與均的插圖';
 
 const LS={url:'jo.url',token:'jo.token',seen:'jo.welcomed',fgSys:'jo.fgSystem'};
 const BAKED=(typeof API_URL!=='undefined'&&API_URL)?API_URL:'';
@@ -900,6 +918,7 @@ function paintButtons(root){
    ══════════════════════════════════════════ */
 function screenSetup(msg){
   document.getElementById('app').innerHTML=`<div class="gate">
+    ${ill('call','sm')}
     <h1>先接上線</h1>
     <p class="note">貼上你在 Apps Script「部署」之後拿到的網址。這件事只做一次。</p>
     <div class="field"><input id="u" inputmode="url" autocapitalize="off" spellcheck="false"
@@ -937,7 +956,7 @@ function screenSetup(msg){
 }
 
 function screenLogin(msg){
-  document.getElementById('app').innerHTML=`<div class="gate">
+  document.getElementById('app').innerHTML=`<div class="gate art">
     <h1>${esc(tf('login.prompt','輸入你的登入碼'))}</h1>
     <div class="field" style="margin-top:18px">
       <input id="c" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder=""></div>
@@ -973,7 +992,7 @@ function screenLogin(msg){
 
 function screenWelcome(){
   const letter=t('welcome.letter').split(/\n+/).map(p=>`<p>${esc(p)}</p>`).join('');
-  document.getElementById('app').innerHTML=`<div class="gate">
+  document.getElementById('app').innerHTML=`<div class="gate art">
     <h1>${esc(t('welcome.title'))}</h1>
     <div class="letter">${letter}</div>
     <div class="hut-note">${esc(t('welcome.hut'))}</div>
@@ -1058,7 +1077,7 @@ function renderMonth(){
       }).join('');
       opposite=groups+`<p class="cap">${esc(t('reveal.done'))}</p>`;
     }else{
-      opposite=`<div class="vig-wrap">${vignette('stones')}<p class="cap">${esc(t('reveal.quiet'))}</p></div>`;
+      opposite=`<div class="ill-wrap">${ill('mist')}<p class="cap">${esc(t('reveal.quiet'))}</p></div>`;
     }
   }else{
     const n=v.partnerPending;
@@ -1067,7 +1086,7 @@ function renderMonth(){
     opposite=n
       ? `<div class="grid self${q.self>=7?' dense':''}">${Array.from({length:n},(_,i)=>frameHTML('self',i,null,{covered:true,ns:'c'})).join('')}</div>
          <p class="cap sys">${esc(t('reveal.waiting',{n}))}　${esc(when)}</p>`
-      : `<div class="vig-wrap">${vignette('boat')}<div><p class="cap">${esc(t('reveal.quiet'))}</p>
+      : `<div class="ill-wrap">${ill('night')}<div><p class="cap">${esc(t('reveal.quiet'))}</p>
          <p class="cap sys">${esc(when)}</p></div></div>`;
   }
 
@@ -1133,7 +1152,7 @@ function renderHut(){
   const body=mine.length
     ? `<div class="grid self">${mine.map((p,i)=>frameHTML('self',i,p,{ns:'h'})).join('')}</div>
        <p class="cap">${esc(t('hut.shareHint'))}</p>`
-    : `<div class="vig-wrap">${vignette('hut')}<div><p class="cap">${esc(t('hut.empty'))}</p>
+    : `<div class="ill-wrap">${ill('home')}<div><p class="cap">${esc(t('hut.empty'))}</p>
        <p class="cap sys">${esc(t('hut.shareHint'))}</p></div></div>`;
   return `<div class="sheet">
     ${wash(300,210,'#A6BC84',0.13,'wash2')}
@@ -1247,7 +1266,7 @@ function renderQuote(){
         <span class="go">${open?'－':'＋'}</span></button>
       ${open?byYm[ym].map(article).join(''):''}</div>`;
   }).join('')
-    : `<div class="vig-wrap">${vignette('cup')}<p class="cap">${esc(t('quote.empty'))}</p></div>`;
+    : `<div class="ill-wrap">${ill('notebook')}<p class="cap">${esc(t('quote.empty'))}</p></div>`;
 
   const door=(k,cls)=>`<button class="btn door ${cls||''}" data-door="${k}">
     <svg preserveAspectRatio="none"></svg>
@@ -1653,7 +1672,7 @@ async function panelLook(){
       <span class="cnt"><span>${esc(PT('count','{p} 張・{n} 則',{p:p.photos,n:p.notes}))}</span>
         ${p.status==='closed'?`<span>${esc(PT('closed','收起來了'))}</span>`:''}</span>
       <span class="go">›</span></button>`).join('')
-      :`<p class="cap sys">${esc(PT('none','還沒有專案'))}</p>`;
+      :`<div class="ill-wrap">${ill('map','sm')}<p class="cap sys">${esc(PT('none','還沒有專案'))}</p></div>`;
     el.querySelectorAll('[data-lp]').forEach(b=>b.onclick=()=>{v.remove();openProject(b.dataset.lp);});
   }).catch(e=>{const el=v.querySelector('#plist');if(el)el.innerHTML=`<p class="cap sys">${esc(e.message)}</p>`;});
   let rows=[];
@@ -1689,7 +1708,7 @@ function panelReveal(item){
   const v=panel(`<div class="rv">
       <div class="m">${esc(t('reveal.now.title',{m:y+' · '+m}))}</div>
       <div class="b">${esc(t('reveal.now.body',{who:item.who,n:item.n}))}</div>
-      <div class="art">${vignette('boat')}</div>
+      ${ill('night','c')}
     </div>
     <div class="row">${btn(t('reveal.now.later'),'','id="no"')}${btn(t('reveal.now.open'),'warm','id="ok"')}</div>`);
   v.querySelector('#no').onclick=()=>v.remove();
@@ -2104,8 +2123,8 @@ function panelJarFilled(jar,onClose){
        <p style="font-size:1.15rem;margin:10px 0 0;padding-left:14px;border-left:2px solid var(--ochre)">${esc(jar.drawnWish.text)}</p>`
     : jar.waiting
       // 對方還沒寫籤：這一罐先欠著，等對方寫了，再由你自己來抽
-      ? `<p class="cap sys">${esc(tf('jar.waiting','{who}還沒寫籤。這一罐先留著，等{who}寫了，你再來抽。',{who:S.partner}))}</p>`
-      : `<p class="cap sys">${esc(t('wish.empty'))}</p>`;
+      ? `${ill('jar','sm')}<p class="cap sys">${esc(tf('jar.waiting','{who}還沒寫籤。這一罐先留著，等{who}寫了，你再來抽。',{who:S.partner}))}</p>`
+      : `${ill('jar','sm')}<p class="cap sys">${esc(t('wish.empty'))}</p>`;
   const v=panel(`<h3>${esc(t('jar.title'))}</h3>
     ${jar.claimed?'':`<p class="note">${esc(t('jar.filled'))}</p>`}${wish}
     <div class="row">${btn(tf('ui.ok','好'),'warm','id="ok"')}</div>`);
@@ -2360,7 +2379,7 @@ function renderProject(){
       ${queueBar()}
       ${whoRow}
       ${allP.length?`<div class="filters">${chip('',PT('all','全部'),shownP.length)}${pc.map(c=>chip(c.id,c.name,cnt(c.id))).join('')}</div>`:''}
-      ${!allP.length?`<p class="cap sys">${esc(PT('noPhotos','還沒有照片'))}</p>`
+      ${!allP.length?`<div class="ill-wrap">${ill('camera','sm')}<p class="cap sys">${esc(PT('noPhotos','還沒有照片'))}</p></div>`
         :(groups.trim()?groups:`<p class="cap sys">${esc(PT('noMatch','這裡沒有照片'))}</p>`)}
     </section>`;
   }
@@ -2829,7 +2848,7 @@ function panelProjectPhoto(id,opts){
       <span class="ct">${richText(c.text)}</span>
       <span class="cd">${esc(pDate(c.createdAt))}</span>
       ${c.owner===S.user?`<button class="cb del" data-cdel="${esc(c.id)}" aria-label="${esc(t('delete'))}">✕</button>`:''}</div>`).join('')
-      :`<p class="cap sys" style="margin:2px 0 0">${esc(PT('noReplies','還沒有人留言'))}</p>`;
+      :`${ill('plant','sm')}<p class="cap sys" style="margin:2px 0 0">${esc(PT('noReplies','還沒有人留言'))}</p>`;
     box.querySelectorAll('[data-cdel]').forEach(b=>b.onclick=()=>confirmDelete('quote',async()=>{
       await api('deleteComment',{id:b.dataset.cdel});
       S.proj.comments=S.proj.comments.filter(x=>x.id!==b.dataset.cdel);dirty=true;drawCmts();
@@ -3302,7 +3321,7 @@ function maybeInvite(){
   if(!deferredInstall&&!isIOS())return;
   localStorage.setItem('jo.invited','1');
   setTimeout(()=>{
-    const v=panel(`<h3>放到主畫面上吧</h3>
+    const v=panel(`${ill('home','sm')}<h3>放到主畫面上吧</h3>
       <p class="note">這樣它就會有自己的位子，跟其他 app 一樣。
       ${isIOS()?'按瀏覽器下面的分享鍵，往下選「加入主畫面」。':''}</p>
       <div class="row">${btn(tf('ui.later','等一下再說'),'','id="no"')}${deferredInstall?btn('好','warm','id="yes"'):''}</div>`);

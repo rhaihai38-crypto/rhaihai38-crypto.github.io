@@ -24,6 +24,7 @@
   --ink-soft:#6E655B;
   --ink-faint:#B0A492;
   --ochre:#C98A3C;
+  --deckle:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M1 1.2 9 .6 17 1.3 26 .5 35 1.1 44 .4 53 1 62 .5 71 1.2 80 .6 89 1.1 99 .7 99.3 9 98.8 18 99.4 27 98.9 36 99.5 45 98.8 54 99.4 63 98.9 72 99.5 81 98.9 90 99.2 99.2 90 99.5 81 98.9 72 99.4 63 98.8 54 99.5 45 98.9 36 99.4 27 98.8 18 99.5 9 99 .8 99.3 1.2 90 .6 81 1.1 72 .5 63 1.2 54 .6 45 1.1 36 .5 27 1.2 18 .6 9Z'/%3E%3C/svg%3E");
   --torn:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 12' preserveAspectRatio='none'%3E%3Cpath d='M0 12V6l9-3 7 2 10-4 8 3 11-1 6 3 9-4 12 2 7-1 10 3 8-3 12 1 9 3 7-2 11-1 9 4 8-3 10 1 6-2 12 3 9-3 8 2 11-2 7 3 10-3 9 2 12-1 6 2 10-4 9 3 7-1 11 2 8-3 10 2 9-1 7 3 12-3 8 1 9 2 10-3 6 2 11-1 8 3 9-2 12 1 7-3 10 2 9 1 8-2 11 2 6-1 4 1V12Z'/%3E%3C/svg%3E");
   /* 兩人的代表色（2026-11-24 統一）：均均＝鼠尾草綠、阿歐＝琥珀。縫線、名牌、任性罐都用這組 */
   --jun:#7F9466;
@@ -105,6 +106,12 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 .group.album{background:#F6EEDD;margin:0 -10px 26px;padding:16px 14px 20px;border-radius:3px;
   box-shadow:inset 0 0 0 1px rgba(122,90,50,.07),0 1px 2px rgba(43,39,36,.06),0 10px 18px -16px rgba(43,39,36,.35);
   background-image:radial-gradient(rgba(122,90,50,.05) 1px,transparent 1.2px);background-size:7px 7px}
+/* 相簿頁是一疊手工紙（2026-11-24 選定）：毛邊、微微歪斜、上下交疊，三個分類像同一疊紙，不是三塊色塊 */
+.group.album{box-shadow:0 10px 22px -16px rgba(43,39,36,.45);border-radius:0;margin-bottom:-6px;
+  -webkit-mask:var(--deckle) 0 0/100% 100% no-repeat;mask:var(--deckle) 0 0/100% 100% no-repeat}
+.group.album:nth-of-type(odd){transform:rotate(-.7deg)}
+.group.album:nth-of-type(even){transform:rotate(.55deg) translateX(4px)}
+.group.album.opposite{margin-top:26px}
 .group.album.who0{background-color:#EFF1E2}   /* 均均的照片：淡淡的鼠尾草綠紙 */
 .group.album.who1{background-color:#F8EDD9}   /* 阿歐的照片：淡淡的琥珀紙 */
 .frame .pc{position:absolute;width:15px;height:15px;z-index:4;pointer-events:none;
@@ -814,7 +821,7 @@ function vignette(kind){
    API
    ══════════════════════════════════════════ */
 /* 版本標記。設定面板最下面會顯示，用來確認手機上跑的是哪一版。 */
-const BUILD='2026-11-24b · 紙本質感';
+const BUILD='2026-11-24c · 相簿是一疊手工紙';
 
 const LS={url:'jo.url',token:'jo.token',seen:'jo.welcomed',fgSys:'jo.fgSystem'};
 const BAKED=(typeof API_URL!=='undefined'&&API_URL)?API_URL:'';

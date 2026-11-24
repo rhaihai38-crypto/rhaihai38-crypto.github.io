@@ -383,8 +383,40 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 .mini{width:84px}
 .mini svg{width:84px;height:auto;overflow:visible}
 .mini path{fill:var(--ink-faint);stroke:none;fill-rule:evenodd}
-.mini .w{font-size:.78rem;line-height:1.55;color:var(--ink-soft);margin-top:2px}
+.mini .w{display:block;font-size:.78rem;line-height:1.55;color:var(--ink-soft);margin-top:6px}
 .wish{padding:15px 0;font-size:1rem;line-height:1.8;display:flex;align-items:baseline;gap:12px}
+/* ── 任性罐插圖（2026-11-24）──
+   插圖和彈珠都用 multiply 融進紙色。疊圖用 grid 疊在同一格，不用 position／z-index：
+   那兩個會把混色隔開，插圖周圍就會出現白框（跟 .hero 同一個坑） */
+.jarstage{display:grid;width:min(250px,72%);margin:4px auto 0}
+.jarstage>*{grid-area:1/1;width:100%;height:auto;display:block;mix-blend-mode:multiply}
+.jarstage .front{opacity:.22;pointer-events:none}
+.jarstage .jarfb{display:none}
+.jarstage.fb>*{display:none}
+.jarstage.fb>.jarfb{display:flex;justify-content:center;mix-blend-mode:normal}
+.jarstage.fb>.jarfb svg{width:186px;height:auto;overflow:visible}
+.jarstage.fb>.jarfb path.glass{fill:var(--ink);stroke:none;fill-rule:evenodd}
+.mini .stack{display:grid}
+.mini .stack>*{grid-area:1/1;width:100%;height:auto;display:block;mix-blend-mode:multiply}
+.mini .stack>.seal2{width:70%;justify-self:end;align-self:end;margin:0 -16px -10px 0}
+.mini.owed .stack img.jar{opacity:.45}
+.mini{background:none;border:0;padding:0;text-align:left;color:inherit;font:inherit;cursor:pointer}
+.boxbtn{width:96px;background:none;border:0;padding:0;text-align:center;color:inherit;font:inherit;cursor:pointer}
+.boxbtn img{width:100%;height:auto;display:block;mix-blend-mode:multiply}
+.boxbtn .w{font-family:var(--ledger);font-size:.7rem;letter-spacing:.05em;color:var(--ink-soft);margin-top:2px}
+.boxgrid{display:flex;flex-wrap:wrap;gap:12px 13px;margin-top:12px}
+.jarpanel .stack{display:grid;width:120px;margin:4px auto 0}
+.jarpanel .stack>*{grid-area:1/1;width:100%;height:auto;display:block;mix-blend-mode:multiply}
+.jarpanel .stack>.seal2{width:62%;justify-self:end;align-self:end;margin:0 -34px -12px 0}
+.jarpanel .wtext{font-size:1.1rem;margin:12px 0 0;padding-left:14px;border-left:2px solid var(--ochre)}
+.wish .wbody{flex:1 1 auto;min-width:0}
+.wish .wmeta{display:block;font-family:var(--ledger);font-size:.68rem;letter-spacing:.04em;color:var(--ink-faint);margin-top:2px}
+.wish .wact{flex:0 0 auto;align-self:center}
+.wish .wwait{flex:0 0 auto;align-self:center;font-size:.8rem;color:var(--ink-faint)}
+/* 完成印記：圖章本身＋沿著下緣的一圈小字（誰按的、哪一天），像郵戳 */
+.seal2{display:block;height:auto;transform:rotate(-8deg);mix-blend-mode:multiply;overflow:visible}
+.seal2 text{font-family:var(--ledger);fill:#9A5B22;letter-spacing:.04em}
+
 .wish .wdel{margin-left:auto;flex:0 0 auto}
 .subh{font-size:.96rem;font-weight:400;margin:22px 0 2px;color:var(--ink)}
 .subh .led{margin-left:8px}
@@ -412,6 +444,8 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 .sheet{position:relative}
 .sheet>.wash.page{left:-30%;top:-46px;width:92%;height:190px;z-index:0}
 .head,.cap,.group,.rule,.sec{position:relative;z-index:1}
+/* 放插圖的區塊不能自成一層，不然 multiply 沒有東西可以混，插圖會出現白框 */
+.sec.blend{z-index:auto}
 .vig{width:104px;height:auto;display:block;margin:6px 0 2px}
 .vig path{fill:var(--ink-faint);stroke:none;fill-rule:evenodd}
 .vig-wrap{display:flex;align-items:flex-end;gap:16px;margin-top:8px}
@@ -716,7 +750,7 @@ function vignette(kind){
    API
    ══════════════════════════════════════════ */
 /* 版本標記。設定面板最下面會顯示，用來確認手機上跑的是哪一版。 */
-const BUILD='2026-11-23b · 每頁都有歐與均';
+const BUILD='2026-11-24 · 任性罐完成任務、合計 20 張';
 
 const LS={url:'jo.url',token:'jo.token',seen:'jo.welcomed',fgSys:'jo.fgSystem'};
 const BAKED=(typeof API_URL!=='undefined'&&API_URL)?API_URL:'';
@@ -1066,14 +1100,18 @@ function renderMonth(){
   const meSlots=[];
   const pick=k=>v.mine.filter(p=>p.visibility==='shared'&&p.kind===k);
   const mineSelf=pick('self'),mineUs=pick('us'),mineMe=pick('me');
-  const fill=(box,kind,list,limit)=>{
-    const n=Math.max(limit,list.length);
-    for(let i=0;i<n;i++)box.push(frameHTML(kind,i,list[i]));
-    if(list.length>=limit)box.push(frameHTML(kind,n,null,{willful:true}));
+  // 2026-11-24 起三類合計（quota.total）：每一類只排出已經放的，後面接一格「＋」。
+  // 這個月合計放滿了，那一格就變成「我想任性」。
+  const total=q.total||((q.self||0)+(q.us||0)+(q.me||0));
+  const used=(c.total!==undefined)?c.total:((c.self||0)+(c.us||0)+(c.me||0));
+  const full=used>=total;
+  const fill=(box,kind,list)=>{
+    list.forEach((p,i)=>box.push(frameHTML(kind,i,p)));
+    box.push(frameHTML(kind,list.length,null,full?{willful:true}:{}));
   };
-  fill(selfSlots,'self',mineSelf,q.self);
-  fill(usSlots,'us',mineUs,q.us);
-  fill(meSlots,'me',mineMe,q.me||1);
+  fill(selfSlots,'self',mineSelf);
+  fill(usSlots,'us',mineUs);
+  fill(meSlots,'me',mineMe);
 
   let opposite='';
   if(v.revealed){
@@ -1084,7 +1122,7 @@ function renderMonth(){
       const groups=['self','us','me'].map(k=>{
         const list=them.filter(p=>(p.kind||'self')===k);
         if(!list.length)return '';
-        const cls=(k==='self')?('grid self'+(q.self>=7?' dense':'')):('grid '+k);
+        const cls=(k==='self')?('grid self'+(list.length>=7?' dense':'')):('grid '+k);
         const rv=(S.justRevealed===v.yearMonth)?' reveal':'';
         const cells=list.map((p,i)=>frameHTML(k,i,p,{ns:'t'+k,readonly:true,delay:d++})).join('');
         return `<div class="group-head" style="margin-top:16px">
@@ -1101,13 +1139,13 @@ function renderMonth(){
     const d=new Date(v.revealAt);
     const when=t('reveal.when',{date:`${d.getMonth()+1}/${d.getDate()}`,hour:d.getHours()});
     opposite=n
-      ? `<div class="grid self${q.self>=7?' dense':''}">${Array.from({length:n},(_,i)=>frameHTML('self',i,null,{covered:true,ns:'c'})).join('')}</div>
+      ? `<div class="grid self${n>=7?' dense':''}">${Array.from({length:n},(_,i)=>frameHTML('self',i,null,{covered:true,ns:'c'})).join('')}</div>
          <p class="cap sys">${esc(t('reveal.waiting',{n}))}　${esc(when)}</p>`
       : `<div class="ill-wrap">${ill('night')}<div><p class="cap">${esc(t('reveal.quiet'))}</p>
          <p class="cap sys">${esc(when)}</p></div></div>`;
   }
 
-  const left=(q.self-c.self)+(q.us-c.us);
+  const left=Math.max(0,total-used);
   return `<div class="sheet">
     ${wash(300,210,'#D9A05B',0.13,'wash1')}
     ${hero(season(v.yearMonth))}
@@ -1120,7 +1158,7 @@ function renderMonth(){
       </div>
       <button class="who-btn" id="settings">${esc(S.user)}</button>
     </div>
-    <p class="cap sys" style="margin:0">${left>0?esc(t('home.quotaLeft',{n:left})):esc(t('home.quotaFull'))}</p>
+    <p class="cap sys" style="margin:0">${used} / ${total}　${left>0?esc(t('home.quotaLeft',{n:left})):esc(t('home.quotaFull'))}</p>
     <button class="lookbtn" id="look"><span>${esc(t('look.btn'))}</span>${
       (S.unseen&&S.unseen.length)?`<em>${S.unseen.length}</em>`:''}</button>
     ${queueBar()}
@@ -1133,21 +1171,21 @@ function renderMonth(){
     <section class="group">
       <div class="group-head">${wash(120,52,'#D9A05B',0.26,'wash2')}
         <h2>${esc(t('home.self'))}</h2>
-        <span class="led">${c.self} / ${q.self}</span></div>
-      <div class="grid self${q.self>=7?' dense':''}">${selfSlots.join('')}</div>
+        <span class="led">${c.self}</span></div>
+      <div class="grid self${mineSelf.length>=6?' dense':''}">${selfSlots.join('')}</div>
     </section>
 
     <section class="group">
       <div class="group-head">${wash(120,52,'#A6BC84',0.28,'wash1')}
         <h2>${esc(t('home.us'))}</h2>
-        <span class="led">${c.us} / ${q.us}</span></div>
+        <span class="led">${c.us}</span></div>
       <div class="grid us">${usSlots.join('')}</div>
     </section>
 
     <section class="group">
       <div class="group-head stack">${wash(120,52,'#C89A86',0.3,'wash1')}
         <div class="row1"><h2>${esc(t('home.me'))}</h2>
-          <span class="led">${c.me||0} / ${q.me||1}</span></div>
+          <span class="led">${c.me||0}</span></div>
         <div class="sub">${esc(t('home.me.note'))}</div></div>
       <div class="grid me">${meSlots.join('')}</div>
     </section>
@@ -1602,41 +1640,137 @@ function jarSVG(count,capacity,seed,w){
   </svg>`;
 }
 
+/* ── 任性罐插圖（2026-11-24，ChatGPT 原稿裁出來的） ──
+   jar-empty 空罐子（彈珠由程式疊進去）｜jar-mini 倉庫小罐｜jar-seal 完成印記
+   jar-drop 投彈珠｜jar-draw 抽籤｜jar-open 打開籤｜jar-wait 等籤｜jar-hold 抱罐子｜jar-done 實現了
+   marbles 4x4 彈珠圖，每格 MB_CELL px */
+const JAR_IMG={w:378,h:317,x0:92,x1:272,y1:270,neck:96};   // 罐子內部範圍，以 jar-empty.webp（378x317）的像素為準。換圖要重量
+const MB_CELL=128, MB_N=16;
+function jarIll(kind,cls){
+  return `<img class="ill ${cls||''}" src="./jar-${kind}.webp?v=1" alt="" loading="lazy" decoding="async" onerror="this.remove()">`;
+}
+/* 誰的願望就用誰的瓶身：均均＝鼠尾草綠、阿歐＝琥珀。改暱稱的話這裡也要跟著改，不然會退回沒有顏色的小罐 */
+const JAR_TINT={'均均':'jun','阿歐':'ou'};
+function miniJar(x,cap){
+  const tint=JAR_TINT[x.wishOwner||''];
+  const src=tint?`./jar-mini-${tint}.webp?v=1`:'./jar-mini.webp?v=1';
+  const n=x.marbles||cap;
+  return `<button class="mini${x.owed?' owed':''}" data-jar="${x.jarIndex}"><span class="stack">
+      <img class="jar" src="${src}" alt="" decoding="async"
+        onerror="if(!this.dataset.f){this.dataset.f=1;this.src='./jar-mini.webp?v=1'}else{this.outerHTML=jarSVG(${n},${n},${900+x.jarIndex},84)}">
+      ${x.done?sealHTML(x.doneBy,x.doneAt):''}</span>
+    <span class="w">${esc(x.wish||(x.owed?tf('jar.owed','還在等籤'):'—'))}</span></button>`;
+}
+/** 每完成 10 罐收進一個箱子，照完成的先後排。沒完成的、還湊不滿一箱的，留在架上 */
+function packJars(list){
+  const done=list.filter(x=>x.done).sort((a,b)=>String(a.doneAt).localeCompare(String(b.doneAt)));
+  const boxes=[],boxed={};
+  for(let i=0;i+10<=done.length;i+=10){
+    const b=done.slice(i,i+10);boxes.push(b);b.forEach(x=>boxed[x.jarIndex]=1);
+  }
+  const loose=list.filter(x=>!boxed[x.jarIndex]).sort((a,b)=>a.jarIndex-b.jarIndex);
+  return {boxes,loose};
+}
+
+/** 完成印記，字沿著圓章下緣繞一圈：「阿歐 · 2026.11.24」。圖讀不到時只剩字，也還看得懂 */
+function sealHTML(who,at){
+  const m=String(at||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const d=m?`${m[1]}.${m[2]}.${m[3]}`:'';
+  const label=[who,d].filter(Boolean).join(' · ');
+  const id='sp'+hash(label+Math.random());
+  // 圓章縮在中間，字繞在圓章外面那一圈的下半部，不會壓到圖案
+  return `<svg class="seal2" viewBox="0 0 100 100" role="img" aria-label="${esc(label)}">
+    <image href="./jar-seal.webp?v=1" x="14" y="8" width="72" height="72"/>
+    <defs><path id="${id}" d="M 6 44 A 44 44 0 0 0 94 44"/></defs>
+    <text font-size="9.6" text-anchor="middle"><textPath href="#${id}" startOffset="50%">${esc(label)}</textPath></text></svg>`;
+}
+
+/** 插圖罐子：空罐子的圖＋程式疊進去的彈珠＋一層淡淡的玻璃蓋在最上面。圖讀不到就退回原本的筆刷罐子 */
+function jarStage(count,capacity,seed){
+  const J=JAR_IMG, cap=Math.max(1,capacity||10);
+  const rows=pileRows(cap), base=rows[0];
+  const inner=J.x1-J.x0;
+  const rad=Math.min(inner/(2*base)*0.99, (J.y1-J.neck)/(rows.length*1.62+0.4));
+  const dy=rad*1.66;
+  const r=rng(seed+17);
+  let balls='',placed=0;
+  for(let ri=0;ri<rows.length;ri++){
+    const n=rows[ri], y=J.y1-rad-ri*dy;
+    const startX=(J.x0+J.x1)/2-(n-1)*rad;
+    for(let i=0;i<n;i++){
+      const cx=startX+i*rad*2+(r()-.5)*rad*0.16, cy=y+(r()-.5)*rad*0.12;
+      if(placed<count){
+        const k=(placed*7+ri*3+seed)%MB_N, sx=(k%4)*MB_CELL, sy=Math.floor(k/4)*MB_CELL;
+        const rr=rad*(0.96+r()*0.08), rot=Math.round(r()*360);
+        balls+=`<svg x="${(cx-rr).toFixed(1)}" y="${(cy-rr).toFixed(1)}" width="${(rr*2).toFixed(1)}" height="${(rr*2).toFixed(1)}"
+          viewBox="${sx} ${sy} ${MB_CELL} ${MB_CELL}"><g transform="rotate(${rot} ${sx+MB_CELL/2} ${sy+MB_CELL/2})">
+          <image href="./marbles.webp?v=1" width="${MB_CELL*4}" height="${MB_CELL*4}"/></g></svg>`;
+      }else{
+        balls+=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${(rad*0.86).toFixed(1)}"
+          fill="none" stroke="rgba(43,39,36,.16)" stroke-width="1.2" stroke-dasharray="3 4"/>`;
+      }
+      placed++;
+    }
+  }
+  return `<div class="jarstage" role="img" aria-label="任性罐，${count} 顆，共 ${cap} 格">
+    <img src="./jar-empty.webp?v=1" alt="" decoding="async" onerror="this.parentNode.classList.add('fb')">
+    <svg viewBox="0 0 ${J.w} ${J.h}">${balls}</svg>
+    <img class="front" src="./jar-empty.webp?v=1" alt="" decoding="async">
+    <div class="jarfb">${jarSVG(count,cap,seed,186)}</div>
+  </div>`;
+}
+
 function renderJar(){
-  const j=S.jar||{marbles:0,capacity:5,jarIndex:1,storedJarList:[],myUnusedWishes:0};
-  const stored=(j.storedJarList||[]).map(x=>`
-    <div class="mini">${jarSVG(j.capacity,j.capacity,900+x.jarIndex,84)}
-      <div class="w">${esc(x.wish||(x.owed?tf('jar.owed','還在等籤'):'—'))}</div></div>`).join('');
+  const j=S.jar||{marbles:0,capacity:10,jarIndex:1,storedJarList:[],myUnusedWishes:0};
+  const pack=packJars(j.storedJarList||[]);
+  const stored=pack.boxes.map((b,i)=>`<button class="boxbtn" data-box="${i}">
+      <img src="./jar-box.webp?v=1" alt="" decoding="async" onerror="this.outerHTML=jarSVG(10,10,${700+i},84)">
+      <span class="w">${esc(tf('jar.boxNth','第 {n} 箱',{n:i+1}))}</span></button>`).join('')
+    +pack.loose.map(x=>miniJar(x,j.capacity)).join('');
   const wishes=(S.wishes||[]);
   const drawn=wishes.filter(w=>w.status==='drawn');
+  // 自己寫的籤一旦被抽出來，就貼在罐子上了，不再列在這裡（在倉庫的罐子上看）
+  const todo=drawn.filter(w=>!w.doneAt&&!w.mine);
   const mineWaiting=wishes.filter(w=>w.mine&&w.status==='unused');
+  const whoTag=w=>w.mine?esc(tf('wish.byMe','你寫的')):esc(tf('wish.byThem','{who}寫的',{who:S.partner}));
+  const day=v=>{const m=String(v||'').match(/^\d{4}-(\d{2})-(\d{2})/);return m?`${Number(m[1])}/${Number(m[2])}`:'';};
 
   const mineHTML=mineWaiting.length
     ? mineWaiting.map(w=>`<div class="wish">${esc(w.text)}
         <button class="btn plain wdel" data-wdel="${esc(w.id)}"
           ><span style="color:#A3502A">${esc(t('delete'))}</span></button></div>`).join('')
-    : `<p class="cap sys" style="margin:0">${esc(t('wish.mineNone'))}</p>`;
+    : `${jarIll('hold','sm')}<p class="cap sys" style="margin:0">${esc(t('wish.mineNone'))}</p>`;
 
-  const drawnHTML=drawn.length?drawn.map(w=>
-    `<div class="wish"><span class="who">${w.mine?esc(tf('wish.byMe','你寫的')):esc(tf('wish.byThem','{who}寫的',{who:S.partner}))}</span>${esc(w.text)}</div>`).join(''):'';
+  // 還沒完成的：完成任務的人看到「完成了」；寫籤的人看到「等對方完成」
+  const todoHTML=todo.map(w=>`<div class="wish">
+      <span class="wbody"><span class="who">${whoTag(w)}</span>${esc(w.text)}
+        <span class="wmeta">${w.jarIndex?esc(tf('wish.fromJar','第 {n} 罐',{n:w.jarIndex}))+'　':''}${esc(day(w.drawnAt))}</span></span>
+      ${w.canDone?`<button class="btn warm small wact" data-wdone="${esc(w.id)}"><span>${esc(tf('wish.doneBtn','完成了'))}</span></button>`
+        :`<span class="wwait">${esc(tf('wish.waitDoer','等{who}完成',{who:S.partner}))}</span>`}
+    </div>`).join('');
 
   return `<div class="sheet">
     ${wash(300,210,'#93B4C6',0.13,'wash1')}
     ${hero('jar')}
     <div class="head"><h1 class="ym">${esc(t('jar.title'))}</h1>
       <span class="led">${esc(tf('jar.nth','第 {n} 罐',{n:j.jarIndex}))}</span></div>
-    <div class="jarwrap">${jarSVG(j.marbles,j.capacity,j.jarIndex*31,186)}</div>
+    ${jarStage(j.marbles,j.capacity,j.jarIndex*31)}
     <p class="cap sys" style="text-align:center">${esc(t('jar.progress',{n:j.marbles}))} / ${j.capacity}</p>
     ${j.canDraw?`<div class="jarnote"><p class="cap">${esc(tf('jar.canDraw','有 {n} 罐等你抽籤',{n:j.canDraw}))}</p>
       ${btn(tf('jar.drawNow','抽籤'),'warm small','id="claim"')}</div>`:''}
     ${j.waitingTheirs?`<p class="cap sys" style="text-align:center">${esc(tf('jar.waitTheirs','有 {n} 罐在等{who}寫籤',{n:j.waitingTheirs,who:S.partner}))}</p>`:''}
     ${j.waitingMine?`<p class="cap sys" style="text-align:center">${esc(tf('jar.waitMine','{who}有 {n} 罐在等你的籤',{n:j.waitingMine,who:S.partner}))}</p>`:''}
 
-    ${stored?`<section class="sec"><h2>${esc(tf('jar.store','倉庫'))}</h2>
+    ${drawn.some(w=>!w.mine)?`<section class="sec blend">
+      <h2>${esc(tf('wish.todoTitle','還沒完成的'))} <span class="led">${todo.length}</span></h2>
+      ${todo.length?todoHTML:`${jarIll('done','sm')}<p class="cap sys" style="margin:0">${esc(tf('wish.todoNone','抽出來的籤都完成了'))}</p>`}
+    </section>`:''}
+
+    ${stored?`<section class="sec blend"><h2>${esc(tf('jar.store','倉庫'))}</h2>
       <p class="cap sys" style="margin:0">${esc(t('jar.stored',{n:j.storedJars}))}</p>
       <div class="shelf">${stored}</div></section>`:''}
 
-    <section class="sec">
+    <section class="sec blend">
       <h2>${esc(t('wish.title'))}</h2>
       <p class="note" style="margin-top:2px">${esc(t('wish.note'))}</p>
 
@@ -1645,11 +1779,45 @@ function renderJar(){
       <p class="cap sys" style="margin:0 0 4px">${esc(t('wish.onlyYou'))}</p>
       ${mineHTML}
 
-      ${drawnHTML?`<h3 class="subh">${esc(t('wish.drawnTitle'))}</h3>${drawnHTML}`:''}
 
       <div class="add-fab">${btn(tf('wish.addOne','放一支進去'),'','id="addw"')}</div>
     </section>
   </div>`;
+}
+
+/** 點一個罐子：這一罐的願望、誰寫的、完成印記；完成任務的人可以在這裡按「完成了」或「按錯了」 */
+function panelJar(idx){
+  const j=S.jar||{};const x=(j.storedJarList||[]).find(z=>z.jarIndex===idx);if(!x)return;
+  const tint=JAR_TINT[x.wishOwner||''];
+  const who=x.wishOwner?(x.wishOwner===S.user?tf('wish.byMe','你寫的'):tf('wish.byThem','{who}寫的',{who:x.wishOwner})):'';
+  const act=!x.wishId||!x.canDone?'':(x.done
+    ?`<button class="btn plain" id="jundo"><span style="color:var(--ink-faint)">${esc(tf('wish.undoBtn','按錯了'))}</span></button>`
+    :btn(tf('wish.doneBtn','完成了'),'warm','id="jdone"'));
+  const v=panel(`<div class="jarpanel">
+    <h3>${esc(tf('jar.nth','第 {n} 罐',{n:idx}))}</h3>
+    <div class="stack"><img src="${tint?`./jar-mini-${tint}.webp?v=1`:'./jar-mini.webp?v=1'}" alt="" decoding="async" onerror="this.remove()">
+      ${x.done?sealHTML(x.doneBy,x.doneAt):''}</div>
+    ${x.wish?`<p class="cap sys" style="margin:12px 0 0">${esc(who)}</p><p class="wtext">${esc(x.wish)}</p>`
+      :`<p class="cap sys" style="margin:12px 0 0">${esc(tf('jar.owed','還在等籤'))}</p>`}
+    ${x.done?`<p class="cap sys">${esc(x.doneBy===S.user?tf('wish.doneByMe','你完成了'):tf('wish.doneByThem','{who}完成了你的願望',{who:x.doneBy}))}</p>`:''}
+    <div class="row">${btn(t('ui.close'),'','id="jx"')}${act}</div></div>`);
+  v.querySelector('#jx').onclick=()=>v.remove();
+  const go=async(undo,b)=>{b.disabled=true;
+    try{await api('doneWish',{id:x.wishId,undo});v.remove();await loadJar();render();}
+    catch(e){b.disabled=false;toast(e.message);}};
+  const d=v.querySelector('#jdone');if(d)d.onclick=()=>go(false,d);
+  const u=v.querySelector('#jundo');if(u)u.onclick=()=>go(true,u);
+}
+
+/** 打開一個箱子：裡面的 10 罐 */
+function panelBox(i){
+  const j=S.jar||{};const b=packJars(j.storedJarList||[]).boxes[i];if(!b)return;
+  const v=panel(`<h3>${esc(tf('jar.boxNth','第 {n} 箱',{n:i+1}))}</h3>
+    ${jarIll('carry','sm c')}
+    <div class="boxgrid">${b.map(x=>miniJar(x,j.capacity)).join('')}</div>
+    <div class="row">${btn(t('ui.close'),'','id="bx"')}</div>`);
+  v.querySelector('#bx').onclick=()=>v.remove();
+  v.querySelectorAll('[data-jar]').forEach(el=>el.onclick=()=>{v.remove();panelJar(Number(el.dataset.jar));});
 }
 
 function panelWish(){
@@ -1835,6 +2003,18 @@ function render(){
     catch(e){b.disabled=false;}
   });
   const aw=app.querySelector('#addw');if(aw)aw.onclick=()=>panelWish();
+  app.querySelectorAll('[data-jar]').forEach(b=>b.onclick=()=>panelJar(Number(b.dataset.jar)));
+  app.querySelectorAll('[data-box]').forEach(b=>b.onclick=()=>panelBox(Number(b.dataset.box)));
+  // 完成了／按錯了。只按一下，不留其他東西
+  const markDone=async(b,undo)=>{
+    b.disabled=true;
+    try{
+      await api('doneWish',{id:b.dataset.wdone||b.dataset.wundo,undo:!!undo});
+      await loadJar();render();
+    }catch(e){b.disabled=false;toast(e.message);}
+  };
+  app.querySelectorAll('[data-wdone]').forEach(b=>b.onclick=()=>markDone(b,false));
+  app.querySelectorAll('[data-wundo]').forEach(b=>b.onclick=()=>markDone(b,true));
   app.querySelectorAll('[data-wdel]').forEach(b=>b.onclick=()=>
     confirmDelete('wish',async()=>{
       await api('deleteWish',{id:b.dataset.wdel});
@@ -2124,7 +2304,8 @@ function panelWillful(info){
   const v=panel(`
     <h3>${esc(t('willful.title'))}</h3>
     <p class="note">${esc(tk('willful.body',info.kind))}</p>
-    <p class="cap sys" style="margin:14px 0 0">${esc(t('home.'+info.kind))} ${info.used} / ${info.limit}</p>
+    ${jarIll('drop','sm c')}
+    <p class="cap sys" style="margin:14px 0 0">${info.used} / ${info.limit}</p>
     <div class="field" style="margin-top:8px">
       <textarea id="why" rows="2" placeholder="${esc(t('willful.placeholder'))}"></textarea></div>
     <div class="err" id="e"></div>
@@ -2140,11 +2321,11 @@ function panelWillful(info){
 function panelJarFilled(jar,onClose){
   const wish=jar.drawnWish
     // 試算表裡可以寫 {who}，會換成寫這支籤的人
-    ? `<p class="cap">${esc(t('jar.draw',{who:jar.drawnWish.owner||S.partner}))}</p>
+    ? `${jarIll(jar.claimed?'draw':'open','sm')}<p class="cap">${esc(t('jar.draw',{who:jar.drawnWish.owner||S.partner}))}</p>
        <p style="font-size:1.15rem;margin:10px 0 0;padding-left:14px;border-left:2px solid var(--ochre)">${esc(jar.drawnWish.text)}</p>`
     : jar.waiting
       // 對方還沒寫籤：這一罐先欠著，等對方寫了，再由你自己來抽
-      ? `${ill('jar','sm')}<p class="cap sys">${esc(tf('jar.waiting','{who}還沒寫籤。這一罐先留著，等{who}寫了，你再來抽。',{who:S.partner}))}</p>`
+      ? `${jarIll('wait','sm')}<p class="cap sys">${esc(tf('jar.waiting','{who}還沒寫籤。這一罐先留著，等{who}寫了，你再來抽。',{who:S.partner}))}</p>`
       : `${ill('jar','sm')}<p class="cap sys">${esc(t('wish.empty'))}</p>`;
   const v=panel(`<h3>${esc(t('jar.title'))}</h3>
     ${jar.claimed?'':`<p class="note">${esc(t('jar.filled'))}</p>`}${wish}
@@ -2180,8 +2361,10 @@ function panelUploadMany(files){
     const o={kind:pick.kind,priv:pick.priv,ym:(S.view&&S.view.yearMonth)||undefined};
     v.remove();free();
     if(o.priv){enqueueMonth(files,o);return;}           // 小屋沒有格子
-    const q=(S.view&&S.view.quota&&S.view.quota[o.kind])||0;
-    const used=(S.view&&S.view.counts&&S.view.counts[o.kind])||0;
+    // 三類合計：剩幾格看整個月，不看單一分類
+    const qq=(S.view&&S.view.quota)||{},cc=(S.view&&S.view.counts)||{};
+    const q=qq.total||0;
+    const used=(cc.total!==undefined)?cc.total:((cc.self||0)+(cc.us||0)+(cc.me||0));
     const left=Math.max(0,q-used);
     if(files.length<=left){enqueueMonth(files,o);return;}
     panelWillfulMany(files,left,o);
@@ -2190,8 +2373,8 @@ function panelUploadMany(files){
 function panelWillfulMany(files,left,o){
   const n=files.length,kname=t('home.'+o.kind);
   const body=left>0
-    ?tf('upload.manyOver','這個月「{kind}」只剩 {left} 格，選了 {n} 張。多出來的 {extra} 張要任性嗎？說一句為什麼，每張投一顆彈珠。',{kind:kname,left,n,extra:n-left})
-    :tf('upload.manyFull','這個月「{kind}」的格子已經滿了，這 {n} 張都要任性嗎？說一句為什麼，每張投一顆彈珠。',{kind:kname,n});
+    ?tf('upload.manyOverTotal','這個月只剩 {left} 格，選了 {n} 張。多出來的 {extra} 張要任性嗎？說一句為什麼，每張投一顆彈珠。',{kind:kname,left,n,extra:n-left})
+    :tf('upload.manyFullTotal','這個月的 {total} 張已經放滿了，這 {n} 張都要任性嗎？說一句為什麼，每張投一顆彈珠。',{kind:kname,n,total:((S.view&&S.view.quota)||{}).total||''});
   const v=panel(`<h3>${esc(t('willful.title'))}</h3>
     <p class="note">${esc(body)}</p>
     <div class="field" style="margin-top:8px"><textarea id="why" rows="2" placeholder="${esc(t('willful.placeholder'))}"></textarea></div>

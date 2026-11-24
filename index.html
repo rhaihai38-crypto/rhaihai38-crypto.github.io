@@ -24,6 +24,10 @@
   --ink-soft:#6E655B;
   --ink-faint:#B0A492;
   --ochre:#C98A3C;
+  --torn:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 12' preserveAspectRatio='none'%3E%3Cpath d='M0 12V6l9-3 7 2 10-4 8 3 11-1 6 3 9-4 12 2 7-1 10 3 8-3 12 1 9 3 7-2 11-1 9 4 8-3 10 1 6-2 12 3 9-3 8 2 11-2 7 3 10-3 9 2 12-1 6 2 10-4 9 3 7-1 11 2 8-3 10 2 9-1 7 3 12-3 8 1 9 2 10-3 6 2 11-1 8 3 9-2 12 1 7-3 10 2 9 1 8-2 11 2 6-1 4 1V12Z'/%3E%3C/svg%3E");
+  /* 兩人的代表色（2026-11-24 統一）：均均＝鼠尾草綠、阿歐＝琥珀。縫線、名牌、任性罐都用這組 */
+  --jun:#7F9466;
+  --ou:#C98A3C;
   --blue:#7A93A3;
   --sage:#8B9B72;
   --rose:#C08A7C;   /* 原本有用到卻沒定義，「想跟你說的話」一直被畫成黑色 */
@@ -97,6 +101,19 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 
 /* ── 相框 ── */
 .group{margin-bottom:30px}
+/* 相簿頁（2026-11-24）：每個分類是一頁相簿，照片用相角固定 */
+.group.album{background:#F6EEDD;margin:0 -10px 26px;padding:16px 14px 20px;border-radius:3px;
+  box-shadow:inset 0 0 0 1px rgba(122,90,50,.07),0 1px 2px rgba(43,39,36,.06),0 10px 18px -16px rgba(43,39,36,.35);
+  background-image:radial-gradient(rgba(122,90,50,.05) 1px,transparent 1.2px);background-size:7px 7px}
+.group.album.who0{background-color:#EFF1E2}   /* 均均的照片：淡淡的鼠尾草綠紙 */
+.group.album.who1{background-color:#F8EDD9}   /* 阿歐的照片：淡淡的琥珀紙 */
+.frame .pc{position:absolute;width:15px;height:15px;z-index:4;pointer-events:none;
+  background:url(./paper-corner.webp?v=1) center/contain no-repeat}
+.frame .pc.tl{left:-3px;top:-3px}
+.frame .pc.tr{right:-3px;top:-3px;transform:scaleX(-1)}
+.frame .pc.bl{left:-3px;bottom:-3px;transform:scaleY(-1)}
+.frame .pc.br{right:-3px;bottom:-3px;transform:scale(-1,-1)}
+.grid.self.dense .frame .pc{width:13px;height:13px}
 .group-head{display:flex;align-items:baseline;gap:10px;margin-bottom:12px;flex-wrap:wrap}
 .group-head.stack{display:block}
 .group-head.stack .row1{display:flex;align-items:baseline;gap:10px}
@@ -111,6 +128,16 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 .grid.self.dense .slot{font-size:1.15rem}
 .grid.us{grid-template-columns:1fr 1fr}
 .grid.me{grid-template-columns:1fr 1fr}
+/* 小屋：照片用小木夾夾在一條細繩上，像晾在小屋裡 */
+.grid.clothesline{row-gap:40px;padding-top:22px}
+.grid.clothesline .frame::before{content:'';position:absolute;left:-9px;right:-9px;top:-13px;height:2px;z-index:0;
+  background:linear-gradient(90deg,rgba(150,112,70,.0),rgba(150,112,70,.55) 8%,rgba(150,112,70,.55) 92%,rgba(150,112,70,0));
+  border-radius:2px;transform:rotate(-.4deg)}
+.grid.clothesline .frame::after{content:'';position:absolute;left:50%;top:-24px;width:15px;height:34px;margin-left:-7px;z-index:5;
+  background:url(./paper-pin.webp?v=1) center/contain no-repeat;pointer-events:none}
+.grid.clothesline .frame:nth-child(odd){transform:rotate(-1.2deg)}
+.grid.clothesline .frame:nth-child(even){transform:rotate(1deg)}
+.grid.clothesline .frame .pc{display:none}
 .frame{position:relative;width:100%;padding:0;display:block}
 .frame.sq{aspect-ratio:1/1}
 .frame.wide{aspect-ratio:4/3}
@@ -135,7 +162,9 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
   padding:1px 7px;border-radius:999px}
 .frame .tag.mark{left:auto;right:7px}
 .frame.covered .cover{position:absolute;inset:0;z-index:3;border-radius:3px;
-  background:repeating-linear-gradient(-45deg,transparent 0 7px,rgba(122,147,163,.22) 7px 8px)}
+  /* 還沒揭曉：蓋一張描圖紙。圖讀不到時看到的是原本的斜線 */
+  background:url(./paper-tracing.webp?v=1) center/100% 100% no-repeat,
+    repeating-linear-gradient(-45deg,transparent 0 7px,rgba(122,147,163,.22) 7px 8px)}
 .group.opposite .frame .line path{fill:var(--blue);opacity:.65}
 .cap{margin:26px 0 0;font-size:.95rem;line-height:1.7}
 .cap.sys{font-family:var(--ledger);font-size:.78rem;letter-spacing:.05em;color:var(--ink-soft)}
@@ -155,7 +184,10 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 .veil{position:fixed;inset:0;background:rgba(43,39,36,.28);z-index:2147483600;
   display:flex;align-items:flex-end;justify-content:center;animation:fade .2s ease}
 .panel{width:var(--sheet);max-height:92vh;overflow-y:auto;background:var(--paper);
-  border-radius:16px 16px 0 0;padding:26px 22px calc(env(safe-area-inset-bottom) + 34px);
+  border-radius:0;
+  /* 上緣是撕下來的紙邊（遮罩畫出不規則的撕痕） */
+  -webkit-mask:var(--torn) top/100% 12px no-repeat,linear-gradient(#000,#000) 0 11px/100% calc(100% - 11px) no-repeat;
+  mask:var(--torn) top/100% 12px no-repeat,linear-gradient(#000,#000) 0 11px/100% calc(100% - 11px) no-repeat;padding:26px 22px calc(env(safe-area-inset-bottom) + 34px);
   animation:rise .28s cubic-bezier(.2,.8,.3,1)}
 .panel h3{font-size:1.2rem;margin-bottom:6px;padding-right:34px}
 .panel .x{position:absolute;top:14px;right:14px;width:34px;height:34px;
@@ -183,10 +215,33 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 .err{color:#A3502A;font-size:.9rem;margin-top:10px;min-height:1.2em}
 
 /* ── 金句本 ── */
-.q{padding:18px 0 4px 14px;position:relative}
-.q+.q{border-top:1px solid rgba(43,39,36,.09)}
-.q::before{content:'';position:absolute;left:0;top:20px;bottom:8px;width:2px;
-  border-radius:2px;background:var(--qc);opacity:.5}
+.q{padding:18px 18px 12px 20px;position:relative;margin:14px 2px 20px;background-color:#FFFDF7;border-radius:2px;
+  box-shadow:0 1px 2px rgba(43,39,36,.07),0 8px 16px -12px rgba(43,39,36,.28)}
+.q:nth-of-type(odd){transform:rotate(-.35deg)}
+.q:nth-of-type(even){transform:rotate(.3deg)}
+/* ── 紙條只有一種樣式：橫線卡片（2026-11-24）。四種用「線的顏色＋紙的材質」區分 ──
+   聽到的：赭橘線、平滑的米白紙
+   想到的：鼠尾草綠線、帶細點的再生紙
+   抽到的：霧藍線、帶纖維的薄紙
+   想說的：玫瑰線、柔軟的棉紙，加雙墨線（寫給對方的） */
+.q{--qtop:rgba(201,138,60,.45);--qline:rgba(201,138,60,.16);--qtex:none;
+  background-image:
+    linear-gradient(to bottom,transparent 33px,var(--qtop) 33px,var(--qtop) 34px,transparent 34px),
+    repeating-linear-gradient(to bottom,transparent 0 33px,var(--qline) 33px 34px),
+    var(--qtex);
+  background-position:0 0,0 36px,0 0;background-repeat:no-repeat,repeat-y,repeat}
+.q[data-kind="note"]{background-color:#FBFCF5;--qtop:rgba(127,148,102,.5);--qline:rgba(127,148,102,.18);
+  --qtex:radial-gradient(rgba(110,101,91,.10) .7px,transparent 1px);background-size:auto,auto,9px 11px}
+.q[data-kind="ask"]{background-color:#F6F9FA;--qtop:rgba(122,147,163,.5);--qline:rgba(122,147,163,.2);
+  --qtex:repeating-linear-gradient(100deg,rgba(122,147,163,.05) 0 1px,transparent 1px 13px)}
+.q[data-kind="say"]{background-color:#FFF6EF;--qtop:rgba(192,138,124,.5);--qline:rgba(192,138,124,.2);
+  --qtex:radial-gradient(rgba(192,138,124,.10) 1.4px,transparent 2px);background-size:auto,auto,14px 17px;padding-bottom:16px}
+.q .qdeco{position:absolute;pointer-events:none;mix-blend-mode:multiply}
+.q .qdeco.head{top:6px;left:50%;transform:translateX(-50%);width:min(170px,56%);height:auto;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent);mask-image:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent)}
+.q .line{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.q .line path{fill:var(--rose);stroke:none;fill-rule:evenodd;opacity:.75}
+.q .line path.second{opacity:.45}
 .q[data-kind="quote"]{--qc:var(--ochre)}
 .q[data-kind="note"]{--qc:var(--sage)}
 .q[data-kind="ask"]{--qc:var(--blue)}
@@ -257,7 +312,12 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 .pgroup{margin-top:20px}
 .pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .ptile{position:relative;aspect-ratio:1/1;cursor:pointer}
-.ptile img{position:absolute;inset:4px;width:calc(100% - 8px);height:calc(100% - 8px);
+/* 專案：拍立得。白邊、下緣比較寬，墨線照舊 */
+.ptile{aspect-ratio:auto;padding-bottom:14%;background:#FFFEFA;box-shadow:0 1px 2px rgba(43,39,36,.10),0 6px 12px -9px rgba(43,39,36,.3)}
+.ptile::before{content:'';display:block;padding-top:100%}
+.ptile:nth-child(3n+1){transform:rotate(-1deg)}
+.ptile:nth-child(3n+2){transform:rotate(.6deg)}
+.ptile img{position:absolute;top:6px;left:6px;width:calc(100% - 12px);height:auto;aspect-ratio:1/1;
   object-fit:cover;opacity:0;transition:opacity .45s ease;border-radius:2px}
 .ptile img.in{opacity:1}
 .ptile .line{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:2;pointer-events:none}
@@ -288,14 +348,14 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 /* 誰放的。顏色照名字排序固定，兩支手機上看起來一樣 */
 .wtag{display:inline-block;font-family:var(--ledger);font-size:.66rem;letter-spacing:.05em;
   padding:1px 7px;border-radius:999px;line-height:1.6;white-space:nowrap}
-.wtag.w0{color:#8E5F1E;background:rgba(201,138,60,.16)}
-.wtag.w1{color:#4F6B7A;background:rgba(122,147,163,.18)}
+.wtag.w0{color:#556B45;background:rgba(127,148,102,.18)}
+.wtag.w1{color:#8E5F1E;background:rgba(201,138,60,.16)}
 .wtag.onphoto{position:absolute;left:8px;bottom:8px;z-index:3;font-size:.6rem;padding:0 6px}
-.wtag.onphoto.w0{background:rgba(250,240,222,.92)}
-.wtag.onphoto.w1{background:rgba(232,240,245,.92)}
+.wtag.onphoto.w0{background:rgba(236,242,228,.92)}
+.wtag.onphoto.w1{background:rgba(250,240,222,.92)}
 .wdot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px}
-.wdot.w0{background:var(--ochre)}
-.wdot.w1{background:var(--blue)}
+.wdot.w0{background:var(--jun)}
+.wdot.w1{background:var(--ou)}
 .pmark{position:absolute;right:8px;bottom:8px;z-index:3;font-family:var(--ledger);font-size:.62rem;
   color:var(--ink-soft);background:rgba(250,246,236,.92);padding:0 6px;border-radius:999px;line-height:1.6}
 .pmark b{font-weight:normal;margin-left:3px}
@@ -303,6 +363,8 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 .pcap{margin-top:8px;white-space:pre-wrap}
 .capsave{margin-top:6px}
 .cmts{margin-top:6px}
+.seed{width:18px;height:18px;object-fit:contain;mix-blend-mode:multiply;vertical-align:-4px;margin-right:4px}
+.cmt .seed{width:22px;height:22px;align-self:center;margin-right:0}
 .cmt{display:flex;align-items:baseline;gap:8px;padding:9px 0;border-bottom:1px dashed rgba(0,0,0,.1);flex-wrap:wrap}
 .cmt .ct{flex:1;min-width:60%;font-size:.95rem;line-height:1.7;white-space:pre-wrap}
 .cmt .ct a.ln{color:#A26A22;border-bottom:1.4px solid rgba(201,138,60,.5);text-decoration:none;word-break:break-all}
@@ -330,6 +392,8 @@ input:focus,textarea:focus,button:focus-visible,[tabindex]:focus-visible{
 .qf span{font-family:var(--ledger);font-size:.68rem;line-height:1.5;color:#A3502A;word-break:break-all}
 .door{position:relative;text-align:left;padding:15px 18px;min-height:0}
 .door span{position:relative;z-index:1;font-size:1rem}
+.door .dico{position:relative;z-index:1;width:30px;height:30px;object-fit:contain;mix-blend-mode:multiply;flex:0 0 auto}
+.doors.top .door{display:flex;align-items:center;gap:8px}
 .door svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 .door path{fill:var(--ink-faint);stroke:none;fill-rule:evenodd}
 .door.ask path{fill:var(--ochre);opacity:.75}
@@ -750,7 +814,7 @@ function vignette(kind){
    API
    ══════════════════════════════════════════ */
 /* 版本標記。設定面板最下面會顯示，用來確認手機上跑的是哪一版。 */
-const BUILD='2026-11-24 · 任性罐完成任務、合計 20 張';
+const BUILD='2026-11-24b · 紙本質感';
 
 const LS={url:'jo.url',token:'jo.token',seen:'jo.welcomed',fgSys:'jo.fgSystem'};
 const BAKED=(typeof API_URL!=='undefined'&&API_URL)?API_URL:'';
@@ -1071,7 +1135,7 @@ function frameHTML(kind,i,photo,opts){
     o.covered?'covered':'',o.willful?'willful':''].join(' ');
   const seed=hash(kind+i+(o.ns||''));
   const inner=photo
-    ? `<img data-pid="${esc(photo.id)}" alt="">${photo.isLate?`<span class="tag">${esc(t('late.badge'))}</span>`:''}${photo.isWillful?`<span class="tag mark">任性</span>`:''}`
+    ? `<img data-pid="${esc(photo.id)}" alt=""><i class="pc tl"></i><i class="pc tr"></i><i class="pc bl"></i><i class="pc br"></i>${photo.isLate?`<span class="tag">${esc(t('late.badge'))}</span>`:''}${photo.isWillful?`<span class="tag mark">任性</span>`:''}`
     : (o.covered?`<div class="cover"></div>`
       : o.willful?`<div class="slot"><em>＋</em>${esc(t('willful.confirm'))}</div>`
       : `<div class="slot">＋</div>`);
@@ -1168,21 +1232,21 @@ function renderMonth(){
 
     <div class="rule" id="r1"></div>
 
-    <section class="group">
+    <section class="group album who${whoIdx(S.user)}">
       <div class="group-head">${wash(120,52,'#D9A05B',0.26,'wash2')}
         <h2>${esc(t('home.self'))}</h2>
         <span class="led">${c.self}</span></div>
       <div class="grid self${mineSelf.length>=6?' dense':''}">${selfSlots.join('')}</div>
     </section>
 
-    <section class="group">
+    <section class="group album who${whoIdx(S.user)}">
       <div class="group-head">${wash(120,52,'#A6BC84',0.28,'wash1')}
         <h2>${esc(t('home.us'))}</h2>
         <span class="led">${c.us}</span></div>
       <div class="grid us">${usSlots.join('')}</div>
     </section>
 
-    <section class="group">
+    <section class="group album who${whoIdx(S.user)}">
       <div class="group-head stack">${wash(120,52,'#C89A86',0.3,'wash1')}
         <div class="row1"><h2>${esc(t('home.me'))}</h2>
           <span class="led">${c.me||0}</span></div>
@@ -1192,7 +1256,7 @@ function renderMonth(){
 
     <div class="rule" id="r2"></div>
 
-    <section class="group opposite">
+    <section class="group album opposite who${whoIdx(S.partner)}">
       <div class="group-head">${wash(120,52,'#93B4C6',0.3,'wash2')}
         <h2>${esc(S.partner)}</h2></div>
       ${opposite}
@@ -1206,7 +1270,7 @@ function renderMonth(){
 function renderHut(){
   const mine=(S.hut||[]).filter(p=>p.visibility==='private');
   const body=mine.length
-    ? `<div class="grid self">${mine.map((p,i)=>frameHTML('self',i,p,{ns:'h'})).join('')}</div>
+    ? `<div class="grid self clothesline">${mine.map((p,i)=>frameHTML('self',i,p,{ns:'h'})).join('')}</div>
        <p class="cap">${esc(t('hut.shareHint'))}</p>`
     : `<div class="ill-wrap">${ill('home')}<div><p class="cap">${esc(t('hut.empty'))}</p>
        <p class="cap sys">${esc(t('hut.shareHint'))}</p></div></div>`;
@@ -1291,14 +1355,14 @@ function renderQuote(){
   </div>`:'';
 
   const article=q=>`
-    <article class="q" data-qid="${esc(q.id)}" data-kind="${esc(q.kind||'quote')}">
+    <article class="q ${q.kind==='say'?'us':''}" data-qid="${esc(q.id)}" data-kind="${esc(q.kind||'quote')}">
       <div class="lab">${esc(t('quote.label.'+(q.kind||'quote')))}</div>
       ${q.prompt?`<div class="q-tag">${esc(q.prompt)}${q.askedBy?
         `　<span style="color:var(--blue)">${esc(t('quote.askedBy',{who:q.askedBy}))}</span>`:''}</div>`:''}
       <div class="txt">${richText(q.text)}</div>
       ${linkRow(q.text)}
       <div class="meta">
-        <span class="who">${esc(q.owner)}記下</span>
+        <span class="who">${seedImg(q.owner)}${esc(q.owner)}記下</span>
         ${q.source?`<span class="src">— ${esc(q.source)}</span>`:''}
         ${q.owner===S.user?`<button class="btn plain" data-edit="${esc(q.id)}"><span>改</span></button>
           <button class="btn plain" data-del="${esc(q.id)}"><span style="color:#A3502A">${esc(t('delete'))}</span></button>`:''}
@@ -1327,6 +1391,7 @@ function renderQuote(){
 
   const door=(k,cls)=>`<button class="btn door ${cls||''}" data-door="${k}">
     <svg preserveAspectRatio="none"></svg>
+    <img class="dico" src="./ic-${k}.webp?v=1" alt="" onerror="this.remove()">
     <span>${esc(t('quote.door.'+k,{who:S.partner}))}</span></button>`;
 
   const asks=(S.pending||[]).map(p=>`
@@ -1936,6 +2001,8 @@ function render(){
   app.innerHTML=page+nav();
   ['r1','r2'].forEach((id,i)=>{const el=document.getElementById(id);if(el)inkRule(el,7+i*13)});
   document.querySelectorAll('.frame').forEach(f=>inkBox(f,Number(f.dataset.seed)));
+  // 「想說的」是寫給對方的信：雙墨線＋兩色縫線
+  document.querySelectorAll('.q.us').forEach(q=>inkBox(q,hash(q.dataset.qid||'')));
   paintButtons();
   loadImages();
 
@@ -2513,7 +2580,16 @@ function pDate(s){const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||'');return m?`${+m[
 function pRange(p){const a=pDate(p.startDate),b=pDate(p.endDate);return a&&b?`${a} – ${b}`:(a||b);}
 function newCatId(){return 'c'+Math.random().toString(36).slice(2,12);}
 /** 兩個人照名字排序，顏色固定 —— 不管在誰的手機上看，均均都是同一個顏色 */
-function whoIdx(name){return [S.user,S.partner].sort().indexOf(name)===0?0:1;}
+function whoIdx(name){
+  // 0＝均均（綠）、1＝阿歐（琥珀）。改暱稱後找不到名字，就退回照名字排序
+  if(JAR_TINT[name]==='jun')return 0;if(JAR_TINT[name]==='ou')return 1;
+  return [S.user,S.partner].sort().indexOf(name)===0?0:1;
+}
+/* 誰寫的：均均＝楓樹翅果、阿歐＝橡實（跟任性罐上的吊飾同一組） */
+function seedImg(name){
+  const t=JAR_TINT[name];
+  return t?`<img class="seed" src="./seed-${t}.webp?v=1" alt="" onerror="this.remove()">`:'';
+}
 function whoTag(name,extra){return `<span class="wtag w${whoIdx(name)} ${extra||''}">${esc(name)}</span>`;}
 function commentsFor(id){return ((S.proj&&S.proj.comments)||[]).filter(c=>c.targetId===id);}
 
@@ -2602,7 +2678,7 @@ function renderProject(){
       <div class="txt">${richText(q.text)}</div>
       ${linkRow(q.text)}
       <div class="meta">
-        <span class="who">${esc(q.owner)}${esc(PT('wrote','記下'))}　${esc(pDate(q.createdAt))}</span>
+        <span class="who">${seedImg(q.owner)}${esc(q.owner)}${esc(PT('wrote','記下'))}　${esc(pDate(q.createdAt))}</span>
         ${q.owner===S.user?`<button class="btn plain" data-pnedit="${esc(q.id)}"><span>${esc(PT('edit','改'))}</span></button>
           <button class="btn plain" data-pndel="${esc(q.id)}"><span style="color:#A3502A">${esc(t('delete'))}</span></button>`:''}
       </div>
@@ -3049,7 +3125,7 @@ function panelProjectPhoto(id,opts){
   // 留言
   const drawCmts=()=>{
     const box=v.querySelector('#cmts'),list=commentsFor(id);
-    box.innerHTML=list.length?list.map(c=>`<div class="cmt">${whoTag(c.owner)}
+    box.innerHTML=list.length?list.map(c=>`<div class="cmt">${seedImg(c.owner)}${whoTag(c.owner)}
       <span class="ct">${richText(c.text)}</span>
       <span class="cd">${esc(pDate(c.createdAt))}</span>
       ${c.owner===S.user?`<button class="cb del" data-cdel="${esc(c.id)}" aria-label="${esc(t('delete'))}">✕</button>`:''}</div>`).join('')
